@@ -1,0 +1,251 @@
+# CI/CD for iet-ui-testtaker (Vite + React SPA, deployed with AWS CDK v2) — Trunk-Based model.
+#
+# The SPA is built with `vite build` into dist/, then deployed by CDK: a private S3 bucket
+# (no public access) served through a CloudFront distribution via Origin Access Control (OAC),
+# with a friendly Route53 domain and a us-east-1 ACM certificate. CDK's BucketDeployment uploads
+# dist/ and invalidates the CloudFront cache on every deploy.
+#
+# NOTE: CDK reads dist/ at synth time (BucketDeployment Source.asset), so every CDK job
+# (synth/diff/deploy) builds the SPA first.
+#
+# AUTH: GitLab OIDC (assume-role-with-web-identity). Each stage assumes
+#   arn:aws:iam::${AWS_ACCOUNT_ID}:role/${ENV}-gitlab-IAC-role
+# via the AWS SDK web-identity token file. No static keys, no `aws` CLI in the image.
+#
+# Required CI/CD variables (Settings -> CI/CD -> Variables), protected on develop:
+#   AWS_ACCOUNT_ID         per-environment account id (scope dev/sit/uat/production).
+#                          dev = 046056637293. Set sit/uat/prod to their own account ids.
+#   AWS_DEFAULT_REGION_SG  ap-southeast-1 (Singapore)
+# Each environment account must have role <env>-gitlab-IAC-role trusting the GitLab
+# OIDC provider (aud https://gitlab.com, sub project_path:idp-education/*). dev exists.
+#
+# NOTE: the CloudFront cert lives in us-east-1 (CDK cross-region reference). The IAC role must be
+# allowed to act in us-east-1 as well as ap-southeast-1.
+#
+# PREREQUISITE (manual, owned by CloudOps): both regions (ap-southeast-1 and us-east-1) must be
+# CDK-bootstrapped in each account before the deploy jobs run. The pipeline does NOT bootstrap.
+
+# Pipeline creation rules: build on branch pushes and on merge requests, but avoid duplicate
+# (detached MR + branch) pipelines — when an MR is open for a branch, the branch-push pipeline
+# is skipped in favour of the MR pipeline.
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_BRANCH
+
+default:
+  image: node:24
+  tags:
+    - iet-dev-ap-southeast-1
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure
+      - scheduler_failure
+      - script_failure
+      - unknown_failure
+  cache:
+    key:
+      files:
+        - package-lock.json
+    paths:
+      - .npm/
+
+variables:
+  GIT_DEPTH: 0
+  DEFAULT_BRANCH: develop
+  # dev account id; override per-scope (sit/uat/production) in CI/CD variables.
+  AWS_ACCOUNT_ID: "046056637293"
+
+stages:
+  - quality_checks
+  - diff
+  - deploy_dev
+  - deploy_sit
+  - deploy_uat
+  - deploy_prod
+
+# ---------------------------------------------------------------------------
+# Reusable fragments
+# ---------------------------------------------------------------------------
+
+# AWS access via GitLab OIDC. A job that extends this must set ENV (dev/sit/uat/prd).
+# The AWS SDK that CDK uses assumes arn:aws:iam::${AWS_ACCOUNT_ID}:role/${ENV}-gitlab-IAC-role
+# from the web-identity env vars below — no `aws` CLI in the image, so nothing is installed and
+# no STS call runs in the shell. The SDK calls AssumeRoleWithWebIdentity itself using the token file.
+.aws_oidc:
+  id_tokens:
+    AWS_OIDC_TOKEN:
+      aud: "https://gitlab.com"
+  variables:
+    AWS_ROLE_ARN: arn:aws:iam::${AWS_ACCOUNT_ID}:role/${ENV}-gitlab-IAC-role
+    AWS_WEB_IDENTITY_TOKEN_FILE: /tmp/aws_oidc_token
+    AWS_ROLE_SESSION_NAME: GitLabRunner-${CI_PROJECT_ID}-${CI_PIPELINE_ID}
+    AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION_SG
+  before_script:
+    - echo "Assuming ${AWS_ROLE_ARN} via OIDC (SDK web identity)"
+    - printf '%s' "$AWS_OIDC_TOKEN" > "$AWS_WEB_IDENTITY_TOKEN_FILE"
+    - npm ci --cache .npm --prefer-offline
+
+# Quality checks run on merge requests AND on any branch pipeline so a feature branch produces a
+# real pipeline. $CI_COMMIT_BRANCH is set for branch pipelines but not for MR (detached) pipelines,
+# so the first rule covers MRs and the second covers branches.
+.on_mr_or_branch:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH
+
+.on_merge_request:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+.on_default_branch:
+  rules:
+    - if: $CI_COMMIT_BRANCH == $DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"
+
+# ---------------------------------------------------------------------------
+# stage: quality_checks  (merge requests + branch pushes) — no AWS creds needed
+# ---------------------------------------------------------------------------
+
+typecheck:
+  stage: quality_checks
+  extends: .on_mr_or_branch
+  before_script:
+    - npm ci --cache .npm --prefer-offline
+  script:
+    - npm run typecheck
+
+lint:
+  stage: quality_checks
+  extends: .on_mr_or_branch
+  # Non-blocking: the reference service pipelines don't gate on lint. The app's src has
+  # pre-existing eslint errors (unescaped JSX entities, empty interfaces); surface them as a
+  # report without blocking deploys. Flip allow_failure to false once the backlog is cleared.
+  allow_failure: true
+  before_script:
+    - npm ci --cache .npm --prefer-offline
+  script:
+    - npm run lint
+
+unit_test:
+  stage: quality_checks
+  extends: .on_mr_or_branch
+  before_script:
+    - npm ci --cache .npm --prefer-offline
+  script:
+    - npm run test:run
+
+# Build the SPA. The dist/ artifact is reused by the CDK jobs (synth/diff/deploy) so they don't
+# rebuild from scratch, and it proves the production build is green.
+build:
+  stage: quality_checks
+  extends: .on_mr_or_branch
+  before_script:
+    - npm ci --cache .npm --prefer-offline
+  script:
+    - npm run build
+  artifacts:
+    name: spa-dist
+    paths:
+      - dist/
+    expire_in: 1 day
+
+# CDK synth of the dev stacks. Reuses the built dist/ from the build job (BucketDeployment reads it).
+synth:
+  stage: quality_checks
+  extends: .on_mr_or_branch
+  needs:
+    - build
+  before_script:
+    - npm ci --cache .npm --prefer-offline
+  script:
+    - npm run synth:dev
+  artifacts:
+    name: cdk-template
+    paths:
+      - cdk.out/
+    expire_in: 1 day
+
+# ---------------------------------------------------------------------------
+# stage: diff  (merge requests) — read-only preview against dev (OIDC)
+# ---------------------------------------------------------------------------
+
+cdk_diff_dev:
+  stage: diff
+  extends:
+    - .aws_oidc
+    - .on_merge_request
+  needs:
+    - build
+  variables:
+    ENV: dev
+  script:
+    - npm run diff:dev
+
+# ---------------------------------------------------------------------------
+# stage: deploy_*  (default branch; dev auto, others manual gates) — OIDC
+# deploy:<env> runs `npm run build && cdk deploy`, so dist/ is produced in-job.
+# ---------------------------------------------------------------------------
+
+deploy_dev:
+  stage: deploy_dev
+  extends:
+    - .aws_oidc
+    - .on_default_branch
+  environment:
+    name: dev
+  variables:
+    ENV: dev
+  script:
+    - npm run deploy:dev -- --require-approval never
+
+deploy_sit:
+  stage: deploy_sit
+  extends:
+    - .aws_oidc
+  environment:
+    name: sit
+  rules:
+    - if: $CI_COMMIT_BRANCH == $DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"
+      when: manual
+      allow_failure: false
+  variables:
+    ENV: sit
+  script:
+    - npm run deploy:sit -- --require-approval never
+
+deploy_uat:
+  stage: deploy_uat
+  extends:
+    - .aws_oidc
+  environment:
+    name: uat
+  rules:
+    - if: $CI_COMMIT_BRANCH == $DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"
+      when: manual
+      allow_failure: false
+  variables:
+    ENV: uat
+  script:
+    - npm run deploy:uat -- --require-approval never
+
+deploy_prod:
+  stage: deploy_prod
+  extends:
+    - .aws_oidc
+  environment:
+    name: production
+  retry: 0
+  rules:
+    - if: $CI_COMMIT_BRANCH == $DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"
+      when: manual
+      allow_failure: false
+  variables:
+    ENV: prd
+  tags:
+    - iet-prod-ap-southeast-1
+  script:
+    - npm run deploy:prod -- --require-approval never

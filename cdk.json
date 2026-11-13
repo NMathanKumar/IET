@@ -1,0 +1,17 @@
+{
+  "app": "npx tsc -p tsconfig.infra.json && npx tsx infra/app.ts",
+  "watch": {
+    "include": ["infra/**"],
+    "exclude": ["**/*.d.ts", "node_modules", "cdk.out", "dist"]
+  },
+  "context": {
+    "stage": "dev",
+    "@aws-cdk/aws-ec2:restrictDefaultSecurityGroup": true,
+    "@aws-cdk/aws-iam:minimizePolicies": true,
+    "@aws-cdk/core:checkSecretUsage": true,
+    "@aws-cdk/core:explicitStackTags": true,
+    "@aws-cdk/core:includePrefixInUniqueNameGeneration": true,
+    "@aws-cdk/aws-cloudfront:useUniqueDistributionDomain": true,
+    "@aws-cdk/core:target-partitions": ["aws", "aws-cn"]
+  }
+}
