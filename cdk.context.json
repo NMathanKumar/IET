@@ -1,0 +1,10 @@
+{
+  "hosted-zone:account=046056637293:domainName=dev-iet.idp.com:region=us-east-1": {
+    "Id": "/hostedzone/Z04880092JNGGLJHAXES7",
+    "Name": "dev-iet.idp.com."
+  },
+  "hosted-zone:account=046056637293:domainName=dev-iet.idp.com:region=ap-southeast-1": {
+    "Id": "/hostedzone/Z04880092JNGGLJHAXES7",
+    "Name": "dev-iet.idp.com."
+  }
+}
