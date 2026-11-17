@@ -77,8 +77,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
       // { channel: string; payload: { event: string; data?: unknown }; source?: string; crossTab?: boolean }
       const hubCapsule = capsule as { channel: string; payload: { event: string; data?: unknown }; source?: string; crossTab?: boolean };
       const { event } = hubCapsule.payload;
-      const eventTimestamp = new Date().toISOString();
-      console.log(`[${eventTimestamp}] AuthProvider: Auth Hub event received: ${event}`);
 
       switch (event) {
         case 'signedIn':

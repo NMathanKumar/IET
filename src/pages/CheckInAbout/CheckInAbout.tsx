@@ -1,7 +1,6 @@
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AppIcon from '@components/AppIcon';
-import { useAuth } from '@hooks/useAuth';
 import AppShell from '../../layouts/AppShell';
 
 const fieldOptions = {
@@ -36,9 +35,6 @@ function SelectField({ id, label, options }: { id: string; label: string; option
 
 export default function CheckInAbout() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const displayName = (user as any)?.given_name || 'Agnes Lee';
-  const email = (user as any)?.signInDetails?.loginId || 'a.lee@email.com';
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -47,7 +43,7 @@ export default function CheckInAbout() {
   };
 
   return (
-    <AppShell displayName={displayName} email={email}>
+    <AppShell>
       <div className="max-w-[860px] mx-auto pb-12 px-4 sm:px-6 md:px-4">
         <Link className="inline-flex mb-6 text-[#55657b] text-[12px] font-bold no-underline" to="/dashboard">
           ← Back to dashboard

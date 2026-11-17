@@ -7,7 +7,7 @@
  */
 
 import { apiRequest } from '../apiClient';
-import { CreateTestTakerRequest, UpdateTestTakerRequest, TestTakerResponse } from './types';
+import { CreateTestTakerRequest, UpdateTestTakerRequest, TestTakerResponse, Enrolment } from './types';
 
 /**
  * Get the current test taker's profile
@@ -43,19 +43,22 @@ export async function createTestTaker(
   data: CreateTestTakerRequest
 ): Promise<TestTakerResponse | null> {
   try {
-    console.log('createTestTaker: Persisting profile to Enrolment Service:', {
-      givenName: data.givenName,
-      familyName: data.familyName,
-      dateOfBirth: data.dateOfBirth,
-      gender: data.gender,
-    });
+    console.log('📤 [createTestTaker] Starting POST request');
+    console.log('[createTestTaker] URL: POST /test-takers/v1/me');
+    console.log('[createTestTaker] Payload:', JSON.stringify(data, null, 2));
 
     const response = await apiRequest<TestTakerResponse>('/test-takers/v1/me', 'POST', data);
 
-    console.log('createTestTaker: Profile persisted successfully');
+    console.log('✅ [createTestTaker] POST succeeded');
+    console.log('[createTestTaker] Response status:', (response as any).status);
+    console.log('[createTestTaker] Response body:', JSON.stringify(response.data, null, 2));
+    
     return response.data || null;
   } catch (error) {
-    console.error('createTestTaker: Failed to create test taker profile:', error);
+    console.error('❌ [createTestTaker] POST failed');
+    console.error('[createTestTaker] Error status:', (error as any)?.status);
+    console.error('[createTestTaker] Error message:', (error as any)?.message);
+    console.error('[createTestTaker] Full error:', error);
     throw error;
   }
 }
@@ -105,6 +108,32 @@ export async function deleteTestTaker(): Promise<void> {
     console.log('deleteTestTaker: Profile deleted successfully');
   } catch (error) {
     console.error('deleteTestTaker: Failed to delete test taker profile:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get all enrolments for the current test taker
+ *
+ * GET /test-takers/v1/me/enrolments
+ *
+ * Retrieves all test purchases and enrolments for the authenticated user.
+ *
+ * @returns Array of enrolments, or empty array if none exist
+ * @throws ApiError if not authenticated (401) or request fails
+ */
+export async function getEnrolments(): Promise<Enrolment[]> {
+  try {
+    console.log('getEnrolments: Fetching test taker enrolments');
+
+    const response = await apiRequest<Enrolment[]>('/test-takers/v1/me/enrolments', 'GET');
+
+    const enrolments = response.data || [];
+    console.log(`getEnrolments: Retrieved ${enrolments.length} enrolment(s)`);
+
+    return enrolments;
+  } catch (error) {
+    console.error('getEnrolments: Failed to fetch enrolments:', error);
     throw error;
   }
 }

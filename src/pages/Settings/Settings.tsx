@@ -103,7 +103,7 @@ function Toggle({
       aria-label={label}
       onClick={() => onChange(!on)}
       className={`w-10 h-[22px] rounded-[11px] border-none cursor-pointer relative p-0 flex-shrink-0 transition-colors duration-200 ${
-        on ? 'bg-[#FF6A00]' : 'bg-[#e0e0e0]'
+        on ? 'bg-[#EB7900]' : 'bg-[#e0e0e0]'
       }`}
     >
       <span
@@ -134,14 +134,14 @@ const NOTIFICATION_OPTIONS = [
 ];
 
 export default function Settings() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [tab, setTab] = useState<Tab>('Profile');
   const [notifs, setNotifs] = useState({ results: true, practice: true, news: false, tips: true });
   const [profile, setProfile] = useState<TestTakerResponse | null>(null);
 
   // Load the real profile; fall back to design values if unavailable
   useEffect(() => {
-    if (!user || isLoading) return;
+    if (!user || authLoading) return;
     let cancelled = false;
     EnrolmentService.getTestTaker()
       .then((result) => {
@@ -153,22 +153,18 @@ export default function Settings() {
     return () => {
       cancelled = true;
     };
-  }, [user, isLoading]);
+  }, [user, authLoading]);
 
-  const email = (user as any)?.signInDetails?.loginId || FALLBACK_PROFILE.email;
   const details = {
     firstName: profile?.givenName || FALLBACK_PROFILE.firstName,
     lastName: profile?.familyName || FALLBACK_PROFILE.lastName,
-    email,
+    email: (profile?.contactEmail || FALLBACK_PROFILE.email) as string,
     dateOfBirth: formatDateOfBirth(profile?.dateOfBirth) || FALLBACK_PROFILE.dateOfBirth,
     gender: formatGender(profile?.gender) || FALLBACK_PROFILE.gender,
   };
-  const displayName = profile?.givenName
-    ? [profile.givenName, profile.familyName].filter(Boolean).join(' ')
-    : 'Agnes Lee';
 
   return (
-    <AppShell displayName={displayName} email={email}>
+    <AppShell>
       <div className="max-w-[760px] mx-auto pb-12 px-4 sm:px-6 md:px-4">
         <div className="mb-7">
           <Link
@@ -202,7 +198,7 @@ export default function Settings() {
                   onClick={() => setTab(t)}
                   className={`block min-w-max lg:w-full text-left px-3.5 py-2.5 rounded-lg border-none cursor-pointer text-[13px] font-bold font-sans transition-all duration-150 mb-0.5 ${
                     isActive
-                      ? 'bg-[#fff8f1] text-[#FF6A00] border-l-4 border-[#FF6A00]'
+                      ? 'bg-[#fff8f1] text-[#EB7900] border-l-4 border-[#EB7900]'
                       : 'bg-transparent text-[#55657b] border-l-4 border-transparent'
                   }`}
                 >
@@ -240,7 +236,7 @@ export default function Settings() {
                 </Section>
                 <p className="mx-0 my-0 mb-5 text-[12px] text-[#55657b]">
                   To make changes, please contact{' '}
-                  <a href={`mailto:${SUPPORT_EMAIL}`} className="text-[#FF6A00] font-bold no-underline">
+                  <a href={`mailto:${SUPPORT_EMAIL}`} className="text-[#EB7900] font-bold no-underline">
                     {SUPPORT_EMAIL}
                   </a>
                 </p>
@@ -259,7 +255,7 @@ export default function Settings() {
                 <div className="flex justify-end">
                   <button
                     type="button"
-                    className="px-5 py-2.5 rounded-lg border-none bg-[#FF6A00] text-white text-[13px] font-bold cursor-pointer font-sans hover:opacity-90 transition-opacity"
+                    className="px-5 py-2.5 rounded-lg border-none bg-[#EB7900] text-white text-[13px] font-bold cursor-pointer font-sans hover:opacity-90 transition-opacity"
                   >
                     Change password
                   </button>
@@ -299,7 +295,7 @@ export default function Settings() {
                 <Section title="Test Access">
                   <div className="flex flex-col gap-3">
                     <div
-                      className="px-4 py-3.5 rounded-[10px] bg-[#fff8f1] border-[1.5px] border-[#FF6A0025] flex items-center justify-between"
+                      className="px-4 py-3.5 rounded-[10px] bg-[#fff8f1] border-[1.5px] border-[#EB79000025] flex items-center justify-between"
                     >
                       <div>
                         <div className="text-[13px] font-bold text-[#232d3f]">
@@ -317,7 +313,7 @@ export default function Settings() {
                     </div>
                     <Link
                       to="/book"
-                      className="block px-4 py-3 rounded-[10px] border-[1.5px] border-dashed border-[#e0e0e0] text-center text-[13px] font-bold text-[#FF6A00] no-underline hover:bg-[#fff8f1] transition-colors"
+                      className="block px-4 py-3 rounded-[10px] border-[1.5px] border-dashed border-[#e0e0e0] text-center text-[13px] font-bold text-[#EB7900] no-underline hover:bg-[#fff8f1] transition-colors"
                     >
                       + Purchase another test
                     </Link>
@@ -350,7 +346,7 @@ export default function Settings() {
                 </Section>
                 <p className="mt-5 text-[12px] text-[#55657b]">
                   To delete your account, please contact{' '}
-                  <a href={`mailto:${SUPPORT_EMAIL}`} className="text-[#FF6A00] font-bold no-underline">
+                  <a href={`mailto:${SUPPORT_EMAIL}`} className="text-[#EB7900] font-bold no-underline">
                     {SUPPORT_EMAIL}
                   </a>
                 </p>

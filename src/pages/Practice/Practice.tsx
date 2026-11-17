@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import AppIcon from '@components/AppIcon';
-import { useAuth } from '@hooks/useAuth';
 import AppShell from '../../layouts/AppShell';
 
 type Skill = 'Reading' | 'Listening' | 'Writing' | 'Speaking';
@@ -49,16 +48,12 @@ const typeBg: Record<Skill, string> = {
 };
 
 export default function Practice() {
-  const { user } = useAuth();
   const [activeSkill, setActiveSkill] = useState<SkillFilter>('All skills');
   const filtered =
     activeSkill === 'All skills' ? sessions : sessions.filter((s) => s.type === activeSkill);
 
-  const displayName = (user as any)?.given_name || 'Agnes Lee';
-  const email = (user as any)?.signInDetails?.loginId || 'a.lee@email.com';
-
   return (
-    <AppShell displayName={displayName} email={email}>
+    <AppShell>
       <div className="max-w-[900px] mx-auto pb-12">
         {/* Header Section */}
         <div className="mb-8">

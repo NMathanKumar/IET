@@ -165,8 +165,30 @@ export async function apiRequest<T = unknown>(
     );
   }
 
-  // Handle 204 No Content - no body to parse
-  if (response.status === 204) {
+  // Handle 201/204 No Content - no body to parse
+  if (response.status === 204 || response.status === 201) {
+    console.log(`apiRequest: Handling ${response.status} response with potential empty body`);
+    
+    // Try to parse JSON response if it exists
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      try {
+        const responseClone = response.clone();
+        const text = await responseClone.text();
+        if (text) {
+          const jsonData = JSON.parse(text);
+          return {
+            data: jsonData as T,
+            status: response.status,
+            statusText: response.statusText,
+          };
+        }
+      } catch (parseErr) {
+        console.log(`apiRequest: Could not parse 201/204 response body, returning undefined`);
+      }
+    }
+    
+    // No body or not JSON - return success with undefined data
     return {
       data: undefined,
       status: response.status,
@@ -185,7 +207,7 @@ export async function apiRequest<T = unknown>(
   }
 
   if (parseError) {
-    // Non-JSON response - return raw text as details
+    // For error responses, include the raw text for debugging
     const text = await responseClone.text();
     throw new ApiError(response.status, response.statusText, parseError.message, text);
   }

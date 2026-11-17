@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@hooks/useAuth';
 import AppShell from '../../layouts/AppShell';
 import { Button } from '@components/common/Button';
 import { Input } from '@components/common/Input';
@@ -14,17 +13,13 @@ const CHECKOUT_FEATURES = [
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-
-  const displayName = (user as any)?.given_name || 'Agnes Lee';
-  const email = (user as any)?.signInDetails?.loginId || 'a.lee@email.com';
 
   const handleBack = () => {
     navigate('/book', { replace: false });
   };
 
   return (
-    <AppShell displayName={displayName} email={email}>
+    <AppShell>
       <div className="max-w-[900px] mx-auto pb-12 px-4 sm:px-6 md:px-4">
         {/* Back button and title */}
         <button

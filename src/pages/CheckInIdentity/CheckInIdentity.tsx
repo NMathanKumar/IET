@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AppIcon from '@components/AppIcon';
-import { useAuth } from '@hooks/useAuth';
 import { completeCheckIn } from '@utils/checkIn';
 import AppShell from '../../layouts/AppShell';
 
@@ -56,12 +55,8 @@ function UploadField({
 
 export default function CheckInIdentity() {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [selfie, setSelfie] = useState<File | null>(null);
   const [identityDocument, setIdentityDocument] = useState<File | null>(null);
-
-  const displayName = (user as any)?.given_name || 'Agnes Lee';
-  const email = (user as any)?.signInDetails?.loginId || 'a.lee@email.com';
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -72,7 +67,7 @@ export default function CheckInIdentity() {
   };
 
   return (
-    <AppShell displayName={displayName} email={email}>
+    <AppShell>
       <div className="max-w-[860px] mx-auto pb-12 px-4 sm:px-6 md:px-4">
         <Link className="inline-flex mb-6 text-[#55657b] text-[12px] font-bold no-underline" to="/check-in/about">
           ← Back to your details

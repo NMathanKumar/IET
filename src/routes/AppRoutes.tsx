@@ -15,6 +15,7 @@ import Practice from '../pages/Practice/Practice';
 import TestPrepare from '../pages/TestPrepare/TestPrepare';
 import CheckInAbout from '../pages/CheckInAbout/CheckInAbout';
 import CheckInIdentity from '../pages/CheckInIdentity/CheckInIdentity';
+import ForgetPassword from '../pages/ForgetPassword/ForgetPassword';
 import {
   signIn as authSignIn,
   getCurrentUser,
@@ -30,7 +31,6 @@ import {
   getPendingProfile,
   clearPendingProfile,
 } from '@utils/pendingProfileStorage';
-import ForgetPassword from '@pages/ForgetPassword/ForgetPassword';
 
 /**
  * Component that handles sign-in and uses auth context
@@ -48,7 +48,6 @@ function SignInPage() {
     const pendingData = getPendingProfile();
 
     if (!pendingData) {
-      console.log('[SignInPage] No pending profile data found');
       return;
     }
 
@@ -57,45 +56,44 @@ function SignInPage() {
     try {
       const session = await getAuthSession();
       hasValidToken = !!session?.tokens?.accessToken;
-      console.log('[SignInPage] Access token verification:', hasValidToken ? 'OK' : 'MISSING');
     } catch (tokenError) {
       console.error('[SignInPage] Failed to verify access token:', tokenError);
-      return; // Silently fail - profile can be created later
+      return;
     }
 
     if (!hasValidToken) {
-      console.warn('[SignInPage] No valid access token - cannot create profile yet');
       return;
     }
 
     try {
-      console.log('[SignInPage] Creating test taker profile with:', {
-        givenName: pendingData.firstName,
-        familyName: pendingData.lastName,
-        dateOfBirth: pendingData.dateOfBirth,
-        gender: pendingData.gender,
-      });
-
       const testTakerData: CreateTestTakerRequest = {
         givenName: pendingData.firstName,
         familyName: pendingData.lastName,
         dateOfBirth: pendingData.dateOfBirth,
         gender: (pendingData.gender || 'PREFER_NOT_TO_SAY') as Gender,
+        termsAccepted: pendingData.termsAccepted,  // ✅ Now included from pending data
+        termsVersion: pendingData.termsVersion,    // ✅ Now included from pending data
+        guardian: pendingData.guardian ? {          // ✅ Guardian data if under 18
+          name: `${pendingData.guardian.firstName} ${pendingData.guardian.lastName}`,
+          dateOfBirth: pendingData.guardian.dateOfBirth,  // ✅ USE GUARDIAN'S OWN DOB
+          email: pendingData.guardian.email,
+          relationship: pendingData.guardian.relationship,
+          termsAccepted: pendingData.guardian.termsAccepted,
+          termsVersion: pendingData.termsVersion,
+        } : undefined,
       };
 
       await EnrolmentService.createTestTaker(testTakerData);
-      console.log('[SignInPage] Test taker profile created successfully');
-
+      
       // Clear pending data after successful creation
       clearPendingProfile();
     } catch (profileError) {
-      // Log error but don't block sign-in
-      // User can update profile later from dashboard or it will retry on next sign-in
-      console.warn('[SignInPage] Failed to create test taker profile:', profileError);
-      console.warn(
-        '[SignInPage] Profile creation can be retried from dashboard or on next sign-in'
-      );
-      // Keep pending data in storage for retry attempt on next sign-in
+      console.error('❌ [SignInPage] POST FAILED');
+      console.error('[SignInPage] Error:', {
+        message: (profileError as any)?.message,
+        status: (profileError as any)?.status,
+        statusText: (profileError as any)?.statusText,
+      });
     }
   };
 
@@ -164,23 +162,33 @@ export function AppRoutes(): React.JSX.Element {
     lastName: string;
     dateOfBirth: string;
     gender: string;
+    termsAccepted: boolean;
+    termsVersion: string;
+    guardian?: any;
   }): Promise<void> => {
     try {
-      console.log('AppRoutes: handleSignUpSubmit called');
-
       // Store NON-SENSITIVE profile data (NOT password) for use after email confirmation and sign-in
       // Password is explicitly NOT stored - it's used only for Cognito sign-up
+      // ✅ NOW INCLUDES: termsAccepted, termsVersion, guardian
+      
       setPendingProfile({
         firstName: credentials.firstName,
         lastName: credentials.lastName,
         dateOfBirth: credentials.dateOfBirth,
         gender: credentials.gender,
+        termsAccepted: credentials.termsAccepted,
+        termsVersion: credentials.termsVersion,
+        guardian: credentials.guardian ? {
+          firstName: credentials.guardian.firstName,
+          lastName: credentials.guardian.lastName,
+          dateOfBirth: credentials.guardian.dateOfBirth,  // ✅ Store guardian's DOB
+          email: credentials.guardian.email,
+          relationship: credentials.guardian.relationship,
+          termsAccepted: credentials.guardian.consentGiven,
+        } : undefined,
       });
 
       await authSignUp(credentials);
-      console.log(
-        'AppRoutes: handleSignUpSubmit completed - account created, confirmation code sent'
-      );
 
       // Navigate to confirmation page and pass email
       navigate('/confirm-signup', {
@@ -189,7 +197,7 @@ export function AppRoutes(): React.JSX.Element {
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Account creation failed';
-      console.error('AppRoutes: handleSignUpSubmit error:', message);
+      console.error('Sign up error:', message);
       throw new Error(message);
     }
   };
@@ -204,14 +212,11 @@ export function AppRoutes(): React.JSX.Element {
     confirmationCode: string
   ): Promise<void> => {
     try {
-      console.log('AppRoutes: handleConfirmSignUpSubmit called');
       await authConfirmSignUp(email, confirmationCode);
-      console.log('AppRoutes: handleConfirmSignUpSubmit completed - email confirmed in Cognito');
-      console.log('AppRoutes: Profile creation will happen after user signs in');
       // User will be directed to sign in after success message in ConfirmSignUp component
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Email confirmation failed';
-      console.error('AppRoutes: handleConfirmSignUpSubmit error:', message);
+      console.error('Email confirmation error:', message);
       throw new Error(message);
     }
   };
@@ -230,8 +235,8 @@ export function AppRoutes(): React.JSX.Element {
         element={<ConfirmSignUp onSubmit={handleConfirmSignUpSubmit} />}
       />
 
-      {/* Forgot password page */}
-      <Route path="/forgot-password" element={<ForgetPassword />} />
+      {/* Forget password page */}
+      <Route path="/forget-password" element={<ForgetPassword />} />
 
       {/* Protected dashboard route */}
       <Route path="/dashboard" element={<Dashboard />} />
