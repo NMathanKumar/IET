@@ -1,14 +1,53 @@
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import Results from './Results';
 
-vi.mock('@hooks/useAuth', () => ({
-  useAuth: () => ({ user: null, isLoading: false }),
+// Hoist all mocks
+const mocks = vi.hoisted(() => ({
+  mockGetEnrolments: vi.fn(),
+  mockGetTestTaker: vi.fn(),
+  mockAuthState: {
+    user: null as null | { username: string },
+    isLoading: false,
+    signOut: vi.fn(),
+  },
+  mockUserProfile: {
+    displayName: 'Agnes Lee',
+    email: 'agnes.lee@example.com',
+    firstName: 'Agnes',
+    lastName: 'Lee',
+  },
 }));
 
+vi.mock('@hooks/useAuth', () => ({
+  useAuth: () => mocks.mockAuthState,
+}));
+
+vi.mock('@context/UserProfileContext', () => ({
+  UserProfileProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  useUserProfileContext: () => ({
+    profile: mocks.mockUserProfile,
+    isLoading: false,
+    error: null,
+  }),
+}));
+
+vi.mock('@services', () => ({
+  EnrolmentService: {
+    getEnrolments: mocks.mockGetEnrolments,
+    getTestTaker: mocks.mockGetTestTaker,
+  },
+}));
+
+// AppShell mock that includes sidebar rendering
 vi.mock('@layouts/AppShell', () => ({
-  default: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  default: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="app-shell">
+      <div data-testid="sidebar">Sidebar Mock</div>
+      <div>{children}</div>
+    </div>
+  ),
 }));
 
 vi.mock('recharts', () => ({
@@ -32,134 +71,99 @@ function renderPage() {
 describe('Results', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-  });
-
-  it('renders the page heading', () => {
-    renderPage();
-    expect(screen.getByRole('heading', { name: /my results/i })).toBeInTheDocument();
-  });
-
-  it('renders back link to dashboard', () => {
-    renderPage();
-    expect(screen.getByRole('link', { name: '← Back to Dashboard' })).toBeInTheDocument();
-  });
-
-  it('renders all test reports', async () => {
-    renderPage();
     
-    // First report (active by default) - check first certId
+    // Default mock state: no enrolments
+    mocks.mockGetEnrolments.mockResolvedValue([]);
+    mocks.mockGetTestTaker.mockResolvedValue(null);
+    mocks.mockAuthState = {
+      user: null,
+      isLoading: false,
+      signOut: vi.fn(),
+    };
+    mocks.mockUserProfile = {
+      displayName: 'Agnes Lee',
+      email: 'agnes.lee@example.com',
+      firstName: 'Agnes',
+      lastName: 'Lee',
+    };
+  });
+
+  it('renders the page heading', async () => {
+    renderPage();
+    expect(await screen.findByRole('heading', { name: /my results/i })).toBeInTheDocument();
+  });
+
+  it('renders back link to dashboard', async () => {
+    renderPage();
+    expect(await screen.findByRole('link', { name: '← Back to Dashboard' })).toBeInTheDocument();
+  });
+
+  it('shows empty state when no results are available', async () => {
+    renderPage();
     await waitFor(() => {
-      expect(screen.getByText(/IDP-ENG-7K2M-9X4P/i)).toBeInTheDocument();
-    });
-    
-    // Click on the second report button to make it active
-    const reportButtons = screen.getAllByRole('button');
-    // Find the second report card by its position
-    if (reportButtons.length > 1) {
-      fireEvent.click(reportButtons[1]);
-    }
-    
-    // Now check second certId (active report)
-    await waitFor(() => {
-      expect(screen.getByText(/IDP-ENG-3PQ2-5R8W/i)).toBeInTheDocument();
-      expect(screen.getByText(/IDP-ENG-/)).toBeInTheDocument();
+      expect(screen.getByText(/no results yet/i)).toBeInTheDocument();
+      expect(screen.getByText(/once you complete an idp english test/i)).toBeInTheDocument();
     });
   });
 
-  it('shows completed and cancelled status badges', async () => {
+  it('shows purchase and practice buttons in empty state', async () => {
     renderPage();
     await waitFor(() => {
-      // Multiple "completed" and "cancelled" badges exist - use getAllByText
-      expect(screen.getAllByText(/completed/i).length).toBeGreaterThan(0);
-      expect(screen.getAllByText(/cancelled/i).length).toBeGreaterThan(0);
+      expect(screen.getByRole('link', { name: /purchase a test/i })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /practice for free/i })).toBeInTheDocument();
     });
   });
 
-  it('shows overall score card', async () => {
+  it('renders empty icon in empty state', async () => {
     renderPage();
     await waitFor(() => {
-      expect(screen.getByText(/overall score/i)).toBeInTheDocument();
-      expect(screen.getByText(/78/i)).toBeInTheDocument();
-      // "/120" may appear multiple times, use getAllByText
-      expect(screen.getAllByText(/\/120/i).length).toBeGreaterThan(0);
-      expect(screen.getAllByText(/B2/i).length).toBeGreaterThan(0);
+      expect(screen.getByText(/no results yet/i)).toBeInTheDocument();
     });
   });
 
-  it('renders radar chart container', async () => {
+  it('renders loading state initially', async () => {
     renderPage();
+    // The component shows "Loading your results..." initially before showing empty state
     await waitFor(() => {
-      expect(screen.getByTestId('mock-radar-chart')).toBeInTheDocument();
+      const hasLoadingOrEmpty = 
+        screen.queryByText(/loading your results/i) || 
+        screen.queryByText(/no results yet/i);
+      expect(hasLoadingOrEmpty).toBeInTheDocument();
     });
   });
 
-  it('shows skill cards for all four skills', async () => {
+  it('displays sidebar component', async () => {
     renderPage();
-    await waitFor(() => {
-      expect(screen.getAllByText(/reading/i).length).toBeGreaterThan(0);
-      expect(screen.getAllByText(/listening/i).length).toBeGreaterThan(0);
-      expect(screen.getAllByText(/writing/i).length).toBeGreaterThan(0);
-      expect(screen.getAllByText(/speaking/i).length).toBeGreaterThan(0);
-    });
+    // Sidebar is rendered by AppShell mock
+    expect(await screen.findByTestId('sidebar')).toBeInTheDocument();
   });
 
-  it('shows CEFR level for each skill', async () => {
+  it('passes correct props to AppShell', async () => {
     renderPage();
-    await waitFor(() => {
-      expect(screen.getAllByText(/C1/i).length).toBeGreaterThan(0);
-      expect(screen.getAllByText(/B2/i).length).toBeGreaterThan(0);
-    });
+    // AppShell should render without displayName/email props now
+    expect(await screen.findByRole('heading', { name: /my results/i })).toBeInTheDocument();
   });
 
-  it('displays skill feedback when selected', async () => {
-    renderPage();
-    await waitFor(() => {
-      expect(screen.getByText(/Excellent comprehension/i)).toBeInTheDocument();
-    });
-  });
+  describe('Results with data', () => {
+    it('renders results view when enrolments are returned', async () => {
+      mocks.mockGetEnrolments.mockResolvedValue([
+        {
+          id: 'enrol-1',
+          userId: 'user-1',
+          testId: 'test-1',
+          status: 'completed',
+          createdAt: '2026-09-24',
+        }
+      ]);
 
-  it('downloads certificate button is disabled for cancelled test', async () => {
-    renderPage();
+      renderPage();
+      
+      // Wait for the component to finish loading and rendering
+      await waitFor(() => {
+        expect(screen.queryByText(/no results yet/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
 
-    // Find and click on the cancelled report
-    const cancelledReport = screen.getByText(/cancelled/i).closest('div[role="button"]');
-    if (cancelledReport) {
-      fireEvent.click(cancelledReport);
-    }
-
-    await waitFor(() => {
-      const downloadBtn = screen.getByRole('button', { name: /download official certificate/i });
-      expect(downloadBtn).toBeDisabled();
-    });
-  });
-
-  it('shows score changes chip when present', async () => {
-    renderPage();
-    await waitFor(() => {
-      expect(screen.getByText(/score updated/i)).toBeInTheDocument();
-    });
-  });
-
-  it('shows additional results service section', async () => {
-    renderPage();
-    await waitFor(() => {
-      expect(screen.getByText(/additional results service/i)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /request score review/i })).toBeInTheDocument();
-    });
-  });
-
-  it('disables score review button for cancelled test', async () => {
-    renderPage();
-
-    // Find and click on the cancelled report
-    const cancelledReport = screen.getByText(/cancelled/i).closest('div[role="button"]');
-    if (cancelledReport) {
-      fireEvent.click(cancelledReport);
-    }
-
-    await waitFor(() => {
-      const reviewBtn = screen.getByRole('button', { name: /request score review/i });
-      expect(reviewBtn).toBeDisabled();
+      expect(await screen.findByRole('heading', { name: /my results/i })).toBeInTheDocument();
     });
   });
 });

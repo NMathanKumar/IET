@@ -41,7 +41,9 @@ export function ConfirmSignUp({ onSubmit }: ConfirmSignUpProps) {
     try {
       await onSubmit(email, code);
       setSuccessMessage('Email confirmed! Redirecting to sign in...');
-      setTimeout(() => navigate('/signin', { replace: true }), 1500);
+      setTimeout(() => {
+        navigate('/signin', { replace: true });
+      }, 1500);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Confirmation failed';
       setError(message);
@@ -81,14 +83,14 @@ export function ConfirmSignUp({ onSubmit }: ConfirmSignUpProps) {
             <img src={verifyEmailIllustration} alt="" className="block w-full h-auto" />
           </div>
           <div className="max-w-[340px] -mt-1 text-center">
-            <p className="mb-2 text-[#FF6A00] text-xs font-black uppercase tracking-widest">Almost there</p>
+            <p className="mb-2 text-[#EB7900] text-xs font-black uppercase tracking-widest">Almost there</p>
             <h2 className="text-[#232d3f] text-[22px] font-bold tracking-tight">Confirm your email to continue</h2>
           </div>
         </div>
 
         {/* Card section */}
         <section className="w-full max-w-[520px] px-6 py-8 md:px-8 md:py-8 lg:px-10 lg:py-10 border border-[#e0e0e0] rounded-xl md:rounded-2xl lg:rounded-2xl bg-white shadow-[0_18px_50px_rgba(35,45,63,0.13)]" aria-labelledby="verify-email-title">
-          <p className="mb-2 text-[#FF6A00] text-xs font-black uppercase tracking-widest">Account verification</p>
+          <p className="mb-2 text-[#EB7900] text-xs font-black uppercase tracking-widest">Account verification</p>
           <h1 id="verify-email-title" className="mb-2 text-[#232d3f] text-2xl font-bold tracking-tight">Verify your email</h1>
           <p className="mb-7 text-[#55657b] text-sm leading-relaxed">
             We sent a verification code to <strong className="text-[#232d3f] font-bold break-words">{email || 'your email address'}</strong>
@@ -133,7 +135,7 @@ export function ConfirmSignUp({ onSubmit }: ConfirmSignUpProps) {
             <button
               type="submit"
               disabled={code.length !== 6 || isLoading || Boolean(successMessage)}
-              className="w-full min-h-11 px-4.5 py-3 border-0 rounded-[10px] bg-[#FF6A00] text-white cursor-pointer text-xs font-black shadow-[0_6px_16px_rgba(255,106,0,0.18)] transition-[box-shadow,transform] duration-160 ease-out hover:shadow-[0_8px_20px_rgba(255,106,0,0.25)] hover:disabled:shadow-[0_6px_16px_rgba(255,106,0,0.18)] hover:-translate-y-0.5 hover:disabled:-translate-y-0 disabled:cursor-not-allowed disabled:saturate-55 disabled:opacity-55"
+              className="w-full min-h-11 px-4.5 py-3 border-0 rounded-[10px] bg-[#EB7900] text-white cursor-pointer text-xs font-black shadow-[0_6px_16px_rgba(235,121,0,0.18)] transition-[box-shadow,transform] duration-160 ease-out hover:shadow-[0_8px_20px_rgba(235,121,0,0.25)] hover:disabled:shadow-[0_6px_16px_rgba(235,121,0,0.18)] hover:-translate-y-0.5 hover:disabled:-translate-y-0 disabled:cursor-not-allowed disabled:saturate-55 disabled:opacity-55"
             >
               {isLoading ? 'Verifying...' : 'Verify & continue →'}
             </button>
@@ -142,11 +144,11 @@ export function ConfirmSignUp({ onSubmit }: ConfirmSignUpProps) {
           {/* Resend section */}
           <div className="flex justify-center items-center gap-1.25 mt-5 text-[#55657b] text-xs">
             <span>Didn&apos;t receive the code?</span>
-            <button
-              type="button"
-              onClick={handleResend}
+            <button 
+              type="button" 
+              onClick={handleResend} 
               disabled={isResending}
-              className="p-0 border-0 bg-transparent text-[#FF6A00] cursor-pointer text-xs font-bold hover:disabled:opacity-60 disabled:cursor-not-allowed disabled:opacity-60"
+              className="p-0 border-0 bg-transparent text-[#EB7900] cursor-pointer text-xs font-bold hover:disabled:opacity-60 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isResending ? 'Sending...' : 'Resend code'}
             </button>

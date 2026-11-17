@@ -11,6 +11,8 @@ export default defineConfig({
     // Unit tests only: exclude integration tests
     include: ['src/**/*.test.tsx', 'src/**/*.test.ts'],
     exclude: ['tests/integration/**'],
+    ui: false,
+    watch: false,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
@@ -21,6 +23,8 @@ export default defineConfig({
     alias: {
       '@components': path.resolve(__dirname, './src/components'),
       '@components/*': path.resolve(__dirname, './src/components/*'),
+      '@context': path.resolve(__dirname, './src/context'),
+      '@context/*': path.resolve(__dirname, './src/context/*'),
       '@hooks': path.resolve(__dirname, './src/hooks'),
       '@hooks/*': path.resolve(__dirname, './src/hooks/*'),
       '@styles': path.resolve(__dirname, './src/styles'),

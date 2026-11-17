@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AppIcon from '@components/AppIcon';
-import { useAuth } from '@hooks/useAuth';
 import AppShell from '../../layouts/AppShell';
 
 /**
@@ -33,13 +32,9 @@ const PRACTICE_FEATURES = [
 ];
 
 export default function PurchaseTest() {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-
-  const displayName = (user as any)?.given_name || 'Agnes Lee';
-  const email = (user as any)?.signInDetails?.loginId || 'a.lee@email.com';
 
   const term = search.toLowerCase();
   const filtered = institutions.filter(
@@ -51,7 +46,7 @@ export default function PurchaseTest() {
   };
 
   return (
-    <AppShell displayName={displayName} email={email}>
+    <AppShell>
       <div className="max-w-[900px] mx-auto pb-12 px-4 sm:px-6 md:px-4">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-8">

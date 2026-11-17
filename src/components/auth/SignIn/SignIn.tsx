@@ -44,7 +44,7 @@ export function SignIn({ onSubmit }: SignInProps) {
   };
 
   const handleForgotPassword = () => {
-    navigate('/forgot-password');
+    navigate('/forget-password');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -137,7 +137,7 @@ export function SignIn({ onSubmit }: SignInProps) {
                   type="button"
                   onClick={handleForgotPassword}
                   disabled={isSubmitting}
-                  className="text-[9px] sm:text-[10px] md:text-[12px] text-[#FF6A00] bg-none border-none cursor-pointer font-bold p-0 disabled:cursor-not-allowed whitespace-nowrap"
+                  className="text-[9px] sm:text-[10px] md:text-[12px] text-[#EB7900] bg-none border-none cursor-pointer font-bold p-0 disabled:cursor-not-allowed whitespace-nowrap"
                 >
                   Forgot password?
                 </button>
@@ -156,7 +156,7 @@ export function SignIn({ onSubmit }: SignInProps) {
                   type="button"
                   onClick={() => setShow(!show)}
                   disabled={isSubmitting}
-                  className="absolute right-2 sm:right-2.5 md:right-[12px] top-1/2 -translate-y-1/2 bg-none border-none cursor-pointer text-[8px] sm:text-[9px] md:text-[11px] text-[#55657b] font-bold font-sans p-0 disabled:cursor-not-allowed whitespace-nowrap px-1"
+                  className="absolute right-2 sm:right-2.5 md:right-[12px] top-1/2 -translate-y-1/2 bg-none border-none cursor-pointer text-[9px] sm:text-[10px] md:text-[11px] text-[#55657b] font-bold font-sans p-0 disabled:cursor-not-allowed whitespace-nowrap"
                 >
                   {show ? 'Hide' : 'Show'}
                 </button>
@@ -168,7 +168,7 @@ export function SignIn({ onSubmit }: SignInProps) {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full block text-center py-2.5 sm:py-2.75 md:py-[13px] rounded-lg md:rounded-[10px] border-none bg-[#FF6A00] text-white text-xs sm:text-xs md:text-[14px] font-black mb-3 sm:mb-4 md:mb-[16px] cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 font-sans leading-tight"
+            className="w-full block text-center py-2.5 sm:py-2.75 md:py-[13px] rounded-lg md:rounded-[10px] border-none bg-[#EB7900] text-white text-xs sm:text-xs md:text-[14px] font-black mb-3 sm:mb-4 md:mb-[16px] cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 font-sans leading-tight"
           >
             {isSubmitting ? 'Signing in...' : 'Sign in'}
           </button>
@@ -180,7 +180,7 @@ export function SignIn({ onSubmit }: SignInProps) {
               type="button"
               onClick={handleNavigateToSignUp}
               disabled={isSubmitting}
-              className="text-[10px] sm:text-[11px] md:text-[12px] text-[#FF6A00] bg-none border-none cursor-pointer font-bold p-0 disabled:cursor-not-allowed"
+              className="text-[10px] sm:text-[11px] md:text-[12px] text-[#EB7900] bg-none border-none cursor-pointer font-bold p-0 disabled:cursor-not-allowed"
             >
               Sign up
             </button>

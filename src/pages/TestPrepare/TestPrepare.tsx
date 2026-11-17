@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import AppIcon from '@components/AppIcon';
-import { useAuth } from '@hooks/useAuth';
 import AppShell from '../../layouts/AppShell';
 
 type CheckStatus = 'ok' | 'warn' | 'pending';
@@ -30,18 +29,14 @@ const statusConfig = {
 };
 
 export default function TestPrepare() {
-  const { user } = useAuth();
   const [agreedEnv, setAgreedEnv] = useState(false);
   const [agreedOnce, setAgreedOnce] = useState(false);
   const [playedAudio, setPlayedAudio] = useState(false);
 
   const allReady = agreedEnv && agreedOnce;
 
-  const displayName = (user as any)?.given_name || 'Agnes Lee';
-  const email = (user as any)?.signInDetails?.loginId || 'a.lee@email.com';
-
   return (
-    <AppShell displayName={displayName} email={email}>
+    <AppShell>
       <div className="mx-auto w-full max-w-[760px] pb-12 md:pb-12">
         {/* Back link */}
         <Link
