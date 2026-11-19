@@ -4,9 +4,10 @@
  */
 
 import type { ReactNode } from 'react';
-import { Link, NavLink, useLocation } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import AppIcon, { type AppIconName } from '@components/AppIcon';
 import { Sidebar } from '@components/Sidebar';
+import PageHeader from '@components/common/PageHeader';
 
 const NAV_ITEMS: { to: string; label: string; icon: AppIconName }[] = [
   { to: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
@@ -16,24 +17,21 @@ const NAV_ITEMS: { to: string; label: string; icon: AppIconName }[] = [
   { to: '/settings', label: 'Settings', icon: 'settings' },
 ];
 
-const TITLES: Record<string, string> = {
-  '/dashboard': 'My Dashboard',
-  '/results': 'My Results',
-  '/practice': 'Practice',
-  '/test-prepare': 'Before You Start',
-  '/check-in/about': 'Test Check-in',
-  '/check-in/identity': 'Test Check-in',
-  '/book': 'Purchase Test',
-  '/settings': 'Settings',
-};
-
 interface AppShellProps {
   children: ReactNode;
+  title?: string;
+  subtitle?: string;
+  backTo?: string;
+  backLabel?: string;
 }
 
-export default function AppShell({ children }: AppShellProps) {
-  const location = useLocation();
-
+export default function AppShell({
+  children,
+  title,
+  subtitle,
+  backTo,
+  backLabel,
+}: AppShellProps) {
   return (
     <div className="flex min-h-screen bg-[rgb(247,249,250)] md:flex-row flex-col md:pb-0 pb-16">
       {/* Sidebar Component */}
@@ -41,19 +39,25 @@ export default function AppShell({ children }: AppShellProps) {
 
       {/* Main Content */}
       <main className="flex-1 md:px-[clamp(24px,4vw,56px)] md:py-9 px-4 py-6 overflow-auto min-w-0">
-        <div className="flex items-center justify-between mb-8 flex-wrap gap-2.5 md:flex-nowrap">
-          <h1 className="text-[20px] font-black text-[#232d3f] m-0 leading-tight">
-            {TITLES[location.pathname] ?? 'IDP'}
-          </h1>
-          <div className="flex items-center gap-3 flex-wrap justify-end">
-            <Link
-              to="/book"
-              className="px-4 py-2 rounded-lg bg-[#eb7900] text-white text-[12px] font-black no-underline whitespace-nowrap"
-            >
-              Purchase a Test →
-            </Link>
+        {title ? (
+          <PageHeader
+            title={title}
+            subtitle={subtitle}
+            backTo={backTo}
+            backLabel={backLabel}
+          />
+        ) : (
+          <div className="flex items-center justify-end mb-8 flex-wrap gap-2.5 md:flex-nowrap">
+            <div className="flex items-center gap-3 flex-wrap justify-end">
+              <Link
+                to="/book"
+                className="px-4 py-2 rounded-lg bg-[#eb7900] text-white text-[12px] font-black no-underline whitespace-nowrap"
+              >
+                Purchase a Test →
+              </Link>
+            </div>
           </div>
-        </div>
+        )}
         {children}
       </main>
 

@@ -53,24 +53,12 @@ export default function Practice() {
     activeSkill === 'All skills' ? sessions : sessions.filter((s) => s.type === activeSkill);
 
   return (
-    <AppShell>
+    <AppShell
+      title="Practice"
+      subtitle="Build confidence and get test-ready with free practice activities."
+      backTo="/dashboard"
+    >
       <div className="max-w-[900px] mx-auto pb-12">
-        {/* Header Section */}
-        <div className="mb-8">
-          <Link
-            to="/dashboard"
-            className="text-[13px] text-[#55657b] no-underline font-semibold"
-          >
-            ← Dashboard
-          </Link>
-          <h1 className="text-[24px] font-black text-[#232d3f] mt-2">
-            Practice
-          </h1>
-          <p className="text-[14px] text-[#55657b] mt-1">
-            Build confidence and get test-ready with free practice activities.
-          </p>
-        </div>
-
         {/* Full-length practice card */}
         <div
           className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-6 bg-[#fff3ea] border border-[#FF6A0030] rounded-[16px] px-7 py-5 mb-6"

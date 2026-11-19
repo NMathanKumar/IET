@@ -194,8 +194,12 @@ export default function Results() {
   // Show loading state
   if (isLoading) {
     return (
-      <AppShell>
-        <div className="max-w-[920px] mx-auto pb-12">
+      <AppShell
+        title="My Results"
+        subtitle="Your completed tests and their results will appear here."
+        backTo="/dashboard"
+      >
+        <div className="max-w-[900px] mx-auto pb-12">
           <p className="text-center text-[14px] text-[#55657b]">Loading your results...</p>
         </div>
       </AppShell>
@@ -222,24 +226,19 @@ export default function Results() {
   };
 
   return (
-    <AppShell>
-      <div className="max-w-[920px] mx-auto pb-12">
+    <AppShell
+      title="My Results"
+      subtitle={
+        hasResults
+          ? 'Your completed tests and their results.'
+          : 'Your completed tests and their results will appear here.'
+      }
+      backTo="/dashboard"
+    >
+      <div className="max-w-[900px] mx-auto pb-12">
         {!hasResults ? (
           // EMPTY STATE
           <>
-            <Link
-              to="/dashboard"
-              className="text-[13px] text-[#55657b] no-underline font-semibold mb-6 inline-block"
-            >
-              ← Back to Dashboard
-            </Link>
-            <h1 className="text-[22px] font-black text-[#232d3f] mb-1">
-              My Results
-            </h1>
-            <p className="text-[13px] text-[#55657b] mb-8">
-              Your completed tests and their results will appear here.
-            </p>
-
             <div className="bg-white rounded-[20px] border-2 border-[#dde2e7] px-8 py-12 text-center">
               <div className="flex justify-center mb-6">
                 <div className="w-16 h-16 rounded-full bg-[#fff3ea] flex items-center justify-center">
@@ -272,19 +271,6 @@ export default function Results() {
           // RESULTS VIEW
           <>
             <div className="mb-7">
-              <Link
-                to="/dashboard"
-                className="text-[13px] text-[#55657b] no-underline font-semibold"
-              >
-                ← Back to Dashboard
-              </Link>
-              <h1 className="text-[22px] font-black text-[#232d3f] mt-3 mb-1">
-                My Results
-              </h1>
-              <p className="text-[13px] text-[#55657b] mb-4">
-                Your completed tests and their results.
-              </p>
-
               <div className="flex flex-col gap-2.5">
                 {reports.map((r, i) => {
                   const isActive = i === activeReport;

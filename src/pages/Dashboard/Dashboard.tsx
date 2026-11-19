@@ -138,7 +138,7 @@ export default function Dashboard() {
         onClose={() => setShowOnboarding(false)}
         onExit={markGuideSeen}
       />
-      <AppShell>
+      <AppShell title="My Dashboard">
         {_enrolmentsError ? (
           // ERROR STATE
           <div className="max-w-[900px] mx-auto pb-12">
