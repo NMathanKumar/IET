@@ -8,7 +8,27 @@ vi.mock('@hooks/useAuth', () => ({
 }));
 
 vi.mock('@layouts/AppShell', () => ({
-  default: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  default: ({
+    children,
+    title,
+    backTo,
+    backLabel,
+  }: {
+    children: React.ReactNode;
+    title?: string;
+    backTo?: string;
+    backLabel?: string;
+  }) => (
+    <div>
+      {title && (
+        <>
+          {backTo && <a href={backTo}>{backLabel ?? '← Back to Dashboard'}</a>}
+          <h1>{title}</h1>
+        </>
+      )}
+      {children}
+    </div>
+  ),
 }));
 
 function renderPage() {

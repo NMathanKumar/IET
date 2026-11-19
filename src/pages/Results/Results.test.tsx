@@ -42,9 +42,23 @@ vi.mock('@services', () => ({
 
 // AppShell mock that includes sidebar rendering
 vi.mock('@layouts/AppShell', () => ({
-  default: ({ children }: { children: React.ReactNode }) => (
+  default: ({
+    children,
+    title,
+    backTo,
+  }: {
+    children: React.ReactNode;
+    title?: string;
+    backTo?: string;
+  }) => (
     <div data-testid="app-shell">
       <div data-testid="sidebar">Sidebar Mock</div>
+      {title && (
+        <>
+          {backTo && <a href={backTo}>← Back to Dashboard</a>}
+          <h1>{title}</h1>
+        </>
+      )}
       <div>{children}</div>
     </div>
   ),

@@ -46,26 +46,12 @@ export default function PurchaseTest() {
   };
 
   return (
-    <AppShell>
-      <div className="max-w-[900px] mx-auto pb-12 px-4 sm:px-6 md:px-4">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-8">
-          <div>
-            <Link
-              to="/dashboard"
-              className="text-[13px] text-[#55657b] no-underline font-semibold"
-            >
-              ← Dashboard
-            </Link>
-            <h1 className="text-[24px] font-black text-[#232d3f] mt-2">
-              Purchase Test
-            </h1>
-            <p className="text-[14px] text-[#55657b] mt-1">
-              Prove your English. Open your future.
-            </p>
-          </div>
-        </div>
-
+    <AppShell
+      title="Purchase Test"
+      subtitle="Prove your English. Open your future."
+      backTo="/dashboard"
+    >
+      <div className="max-w-[900px] mx-auto pb-12">
         {/* Hero Pricing Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-7">
           {/* Test Card */}

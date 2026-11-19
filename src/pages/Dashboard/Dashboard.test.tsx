@@ -29,7 +29,18 @@ vi.mock('react-router-dom', async () => {
 });
 
 vi.mock('@layouts/AppShell', () => ({
-  default: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  default: ({
+    children,
+    title,
+  }: {
+    children: React.ReactNode;
+    title?: string;
+  }) => (
+    <div>
+      {title && <h1>{title}</h1>}
+      {children}
+    </div>
+  ),
 }));
 
 vi.mock('@services', () => ({

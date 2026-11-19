@@ -5,6 +5,7 @@ export * from './Dropdown';
 export * from './Input';
 export * from './MediaControls';
 export * from './Modal';
+export { default as PageHeader } from './PageHeader';
 export * from './Stepper';
 export * from './Timer';
 export * from './Toast';
