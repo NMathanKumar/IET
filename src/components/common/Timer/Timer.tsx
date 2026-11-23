@@ -83,15 +83,15 @@ export const Timer: React.FC<TimerProps> = ({
   if (warningThreshold && secondsRemaining <= warningThreshold) {
     if (secondsRemaining <= warningThreshold / 2) {
       // Critical state
-      displayClasses = 'text-[#E01F26] animate-pulse';
+      displayClasses = 'text-brand-red animate-pulse';
     } else {
       // Warning state
-      displayClasses = 'text-[#f9a825] animate-pulse';
+      displayClasses = 'text-warning animate-pulse';
     }
   }
 
   const timerClass = [
-    'inline-flex items-center justify-center p-4 rounded-md bg-white border border-[#DDE2E7] min-w-[200px]',
+    'inline-flex items-center justify-center p-4 rounded-md bg-white border border-border-default min-w-[200px]',
     orientation === 'vertical' ? 'flex-col gap-4' : '',
     className,
   ]
@@ -108,7 +108,7 @@ export const Timer: React.FC<TimerProps> = ({
       aria-atomic="true"
     >
       <div
-        className={`font-mono text-2xl font-bold text-[#232D3F] transition-colors letter-spacing-2 text-center ${displayClasses} ${orientation === 'vertical' ? 'text-4xl' : ''}`}
+        className={`font-mono text-2xl font-bold text-ink transition-colors letter-spacing-2 text-center ${displayClasses} ${orientation === 'vertical' ? 'text-4xl' : ''}`}
       >
         {formattedTime}
       </div>

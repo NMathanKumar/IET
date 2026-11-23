@@ -1,73 +1,30 @@
-/* CSS Custom Properties (Variables) */
+/* CSS Custom Properties (Variables) - Layer 1 only */
+/* Layer 2+ are now defined in @theme (tailwind.css) */
 
 :root {
   /*
    * ----------------------------------------------------------------
-   * LAYER 1 - Raw brand palette (BRAND-SWAPPABLE, per MSP-2011 AC2 / F118)
-   * Moonshot/IDP English Test brand colors
-   * To re-brand, override ONLY these --brand-* values (e.g. in a theme
-   * block or a brand stylesheet). Components must NOT reference these
-   * directly; they reference the semantic tokens in Layer 2.
+   * LAYER 1 - Raw brand palette (BRAND-SWAPPABLE)
+   * To re-brand, override ONLY these --brand-* values
    * ----------------------------------------------------------------
    */
-  --brand-primary: #eb7900;
-  --brand-primary-hover: #ad4300;
-  --brand-primary-active: #943600;
-  --brand-secondary: #ffc01e;
-  --brand-accent: #e01f26;
-  --brand-accent-hover: #c01520;
+  --brand-primary: #EB7900;
+  --brand-primary-hover: #E85A00;
+  --brand-primary-active: #D14900;
+  --brand-secondary: #FFC01E;
+  --brand-accent: #E01F26;
+  --brand-accent-hover: #C01520;
   --brand-success: #2e7d32;
   --brand-warning: #f9a825;
   --brand-info: #17a2b8;
   --brand-surface: #ffffff;
   --brand-on-primary: #ffffff;
-  --brand-focus-ring: #eb7900;
-  /* RGB channels of the brand colors, so faint/alpha tokens below can be
-     derived from the swappable layer (override these when re-branding). */
+  --brand-focus-ring: #EB7900;
+  /* RGB channels for derivation of faint/alpha tokens */
   --brand-primary-rgb: 235, 121, 0;
   --brand-secondary-rgb: 255, 192, 30;
   --brand-accent-rgb: 224, 31, 38;
-
-  /*
-   * ----------------------------------------------------------------
-   * LAYER 2 - Semantic tokens (components reference ONLY these)
-   * These map intent -> brand palette. Stable names so a brand swap
-   * never requires component changes.
-   * ----------------------------------------------------------------
-   */
-  --color-action: var(--brand-primary);
-  --color-action-hover: var(--brand-primary-hover);
-  --color-action-active: var(--brand-primary-active);
-  --color-on-action: var(--brand-on-primary);
-  --color-danger-action: var(--brand-accent);
-  --color-danger-action-hover: var(--brand-accent-hover);
-  --color-surface: var(--brand-surface);
-  --color-focus-ring: var(--brand-focus-ring);
-  /* Faint focus/validation rings derived from brand RGB so a rebrand flows through */
-  --color-focus-ring-faint: rgba(var(--brand-primary-rgb), 0.1);
-  --color-danger-ring-faint: rgba(var(--brand-accent-rgb), 0.1);
-  --color-ink: #232d3f;
-  --color-slate: #55657b;
-  --color-cream: #fff3ea;
-  --color-surface-subtle: #f7f9fa;
-  --color-surface-brand: #fff3ea;
-  --color-text-primary: #232d3f;
-  --color-text-secondary: #55657b;
-  --color-action-primary: #eb7900;
-  --color-action-primary-hover: #ad4300;
-  --color-action-primary-text: #ffffff;
-  --color-score-highlight: #ff8300;
-  --color-brand-orange: #eb7900;
-  --color-brand-yellow: #ffc01e;
-  --color-brand-red: #e01f26;
-  --color-border-default: #dde2e7;
-  --color-border-subtle: #e9edf0;
-  --color-border: #dde2e7;
-  --color-muted: #f5f5f5;
-  --color-muted-foreground: #8d8f91;
-  --color-success: #2e7d32;
-  --color-warning: #f9a825;
-  --color-overlay: rgba(0, 0, 0, 0.5);
+  --brand-error-background-rgb: 254, 242, 242;
 
   /* Border radius (Figma: sm=8px, md=12px, lg=16px) */
   --radius-sm: 8px;
@@ -139,7 +96,7 @@
   --transition-default: 160ms ease;
 
   /* Gradient */
-  --gradient-brand: linear-gradient(135deg, #ffc01e 0%, #ff6a00 50%, #e01f26 100%);
+  --gradient-brand: linear-gradient(135deg, #EB7900 0%, #E85A00 100%);
 
   /* Breakpoints */
   --breakpoint-xs: 480px;

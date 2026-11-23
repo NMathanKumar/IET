@@ -1,23 +1,23 @@
 /**
  * Onboarding utilities
- * Manages guideSeen flag to track if user has completed the first-login guide
+ * Manages hasSeenGuide flag to track if user has completed the first-login guide
  */
 
 import { EnrolmentService } from '@services';
 
 /**
  * Mark guide as seen/completed
- * Updates the test taker profile with guideSeen = true
+ * Updates the test taker profile with hasSeenGuide = true
  *
  * Per OpenAPI spec, PUT /test-takers/v1/me only accepts:
  * - gender (optional)
- * - guideSeen (optional)
+ * - hasSeenGuide (optional)
  *
  * @throws Error if update fails
  */
 export async function markGuideSeen(): Promise<void> {
   try {
-    console.log('markGuideSeen: Starting - Setting guideSeen flag');
+    console.log('markGuideSeen: Starting - Setting hasSeenGuide flag');
     
     // Get current profile to include gender if needed
     console.log('markGuideSeen: Fetching current profile...');
@@ -27,7 +27,7 @@ export async function markGuideSeen(): Promise<void> {
       profile = await EnrolmentService.getTestTaker();
       console.log('markGuideSeen: Profile fetched:', { 
         gender: profile?.gender,
-        guideSeen: profile?.guideSeen,
+        hasSeenGuide: profile?.hasSeenGuide,
       });
     } catch (getError) {
       console.warn('markGuideSeen: GET profile failed (profile may not exist yet):', (getError as any)?.message);
@@ -42,22 +42,22 @@ export async function markGuideSeen(): Promise<void> {
     }
 
     // Build update request with ONLY the fields PUT accepts per OpenAPI spec
-    // PUT /test-takers/v1/me only accepts: gender, guideSeen
+    // PUT /test-takers/v1/me only accepts: gender, hasSeenGuide
     // Do NOT send: givenName, familyName, dateOfBirth (will cause 400 Bad Request)
     const updateData = {
       gender: profile.gender, // Include current gender (optional)
-      guideSeen: true,         // Set guideSeen to true
+      hasSeenGuide: true,      // Set hasSeenGuide to true
     };
     
     console.log('markGuideSeen: Sending PUT request with data:', updateData);
-    console.log('markGuideSeen: (Only gender and guideSeen are allowed per OpenAPI spec)');
+    console.log('markGuideSeen: (Only gender and hasSeenGuide are allowed per OpenAPI spec)');
 
-    // Update profile with guideSeen flag
+    // Update profile with hasSeenGuide flag
     const response = await EnrolmentService.updateTestTaker(updateData as any);
     
     console.log('markGuideSeen: ✅ PUT request succeeded');
     console.log('markGuideSeen: Response:', response);
-    console.log('markGuideSeen: ✅ Flag set successfully - guideSeen is now true');
+    console.log('markGuideSeen: ✅ Flag set successfully - hasSeenGuide is now true');
   } catch (error) {
     console.error('markGuideSeen: ❌ FAILED to set flag');
     console.error('markGuideSeen: Error details:', {
@@ -73,7 +73,7 @@ export async function markGuideSeen(): Promise<void> {
 
 /**
  * Check if user has seen the first-login guide
- * Returns true if guideSeen flag is set, false otherwise
+ * Returns true if hasSeenGuide flag is set, false otherwise
  *
  * For new users or when profile doesn't exist yet, returns false (show guide)
  *
@@ -89,8 +89,8 @@ export async function hasSeenGuide(): Promise<boolean> {
       return false; // Show onboarding for new users
     }
     
-    console.log('hasSeenGuide: Profile fetched:', { guideSeen: profile?.guideSeen, keys: Object.keys(profile || {}) });
-    const result = profile?.guideSeen === true;
+    console.log('hasSeenGuide: Profile fetched:', { hasSeenGuide: profile?.hasSeenGuide, keys: Object.keys(profile || {}) });
+    const result = profile?.hasSeenGuide === true;
     console.log('hasSeenGuide: Result =', result);
     return result;
   } catch (error) {

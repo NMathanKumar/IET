@@ -53,12 +53,12 @@ export const Stepper: React.FC<StepperProps> = ({
             <div
               className={`flex items-center justify-center w-9 h-9 rounded-full font-semibold text-sm border-2 flex-shrink-0 transition-all ${
                 isCompleted
-                  ? 'bg-[#FF6A00] border-[#FF6A00] text-white'
+                  ? 'bg-brand-primary border-brand-primary text-white'
                   : isActive
-                    ? 'bg-[#FF6A00] border-[#FF6A00] text-white shadow-[0_0_0_3px_rgba(255,106,0,0.1)]'
+                    ? 'bg-brand-primary border-brand-primary text-white shadow-[0_0_0_3px_rgba(235,121,0,0.1)]'
                     : disabled || isFuture
-                      ? 'border-[#DDE2E7] bg-white text-[#232D3F] opacity-50'
-                      : 'border-[#DDE2E7] bg-white text-[#232D3F]'
+                      ? 'border-border-default bg-white text-ink opacity-50'
+                      : 'border-border-default bg-white text-ink'
               }`}
             >
               {isCompleted ? (
@@ -78,7 +78,7 @@ export const Stepper: React.FC<StepperProps> = ({
             </div>
             <div className={`flex flex-col gap-1 ${isHorizontal ? 'items-center' : 'items-start'}`}>
               <p
-                className={`text-sm font-medium ${isFuture ? 'text-[#55657B]' : 'text-[#232D3F]'}`}
+                className={`text-sm font-medium ${isFuture ? 'text-slate' : 'text-ink'}`}
               >
                 {step.label}
               </p>
@@ -98,7 +98,7 @@ export const Stepper: React.FC<StepperProps> = ({
                   isHorizontal
                     ? 'top-4.5 left-1/2 w-[calc(100%-36px)] h-0.5 ml-4.5'
                     : 'left-4.5 top-9 w-0.5 h-[calc(100%-36px)]'
-                } ${index < activeStep ? 'bg-[#FF6A00]' : 'bg-[#DDE2E7]'} transition-colors`}
+                } ${index < activeStep ? 'bg-brand-primary' : 'bg-border-default'} transition-colors`}
               />
             )}
 
@@ -108,7 +108,7 @@ export const Stepper: React.FC<StepperProps> = ({
                 type="button"
                 className={`bg-none border-none p-0 cursor-pointer flex gap-2 w-full text-left rounded-md transition-colors ${
                   isHorizontal ? 'flex-col items-center text-center' : 'flex-row'
-                } hover:bg-[#fafafa] focus-visible:outline-2 focus-visible:outline-[#FF6A00] focus-visible:outline-offset-2 disabled:cursor-not-allowed`}
+                } hover:bg-grey-faint focus-visible:outline-2 focus-visible:outline-brand-primary focus-visible:outline-offset-2 disabled:cursor-not-allowed`}
                 onClick={() => handleStepClick(index)}
                 disabled={isFuture || disabled}
                 aria-label={`Step ${index + 1}: ${step.label}${isActive ? ' (current)' : ''}${isCompleted ? ' (completed)' : ''}`}

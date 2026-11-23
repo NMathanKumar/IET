@@ -72,7 +72,7 @@ export interface CreateTestTakerRequest {
   gender?: Gender;
 
   /** Whether user has seen the first-login guide (OPTIONAL) */
-  guideSeen?: boolean;
+  hasSeenGuide?: boolean;
 
   /** Parent/guardian information — REQUIRED if user is under 18 (CONDITIONAL) */
   guardian?: GuardianRequest;
@@ -102,7 +102,7 @@ export type UpdateTestTakerRequest = CreateTestTakerRequest;
  * - familyName (1-256 chars)
  * - dateOfBirth (YYYY-MM-DD)
  * - gender (enum)
- * - guideSeen (boolean, optional)
+ * - hasSeenGuide (boolean, optional)
  */
 export interface TestTakerResponse {
   givenName?: string;
@@ -110,7 +110,7 @@ export interface TestTakerResponse {
   dateOfBirth?: string;
   gender?: Gender;
   /** Whether user has seen the first-login guide */
-  guideSeen?: boolean;
+  hasSeenGuide?: boolean;
   // Additional fields may be present in response — backend to confirm
   [key: string]: unknown;
 }

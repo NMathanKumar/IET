@@ -19,61 +19,52 @@ function renderAppShell(path: string) {
 
 describe('AppShell - Shared top bar (MSP-2715 extended)', () => {
   it('renders a shared page header with back link, title, subtitle, and purchase action', () => {
-    render(
-      <MemoryRouter initialEntries={['/practice']}>
-        <AppShell
-          title="Practice"
-          subtitle="Build confidence"
-          backTo="/dashboard"
-        >
-          <div>Content</div>
-        </AppShell>
-      </MemoryRouter>
-    );
-
-    expect(screen.getByRole('heading', { level: 1, name: 'Practice' })).toBeInTheDocument();
-    expect(screen.getByText('Build confidence')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: '← Back to Dashboard' })).toHaveAttribute('href', '/dashboard');
-    expect(screen.getAllByRole('link', { name: /purchase a test/i })).toHaveLength(1);
-  });
-  it('does not render any top-bar H1 on /settings', () => {
-    renderAppShell('/settings');
-    expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
-  });
-
-  it('does not render any top-bar H1 on /dashboard', () => {
-    renderAppShell('/dashboard');
-    expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
-  });
-
-  it('does not render any top-bar H1 on /practice', () => {
     renderAppShell('/practice');
-    expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
+    
+    expect(screen.getByRole('heading', { level: 1, name: 'Practice' })).toBeInTheDocument();
+    expect(screen.getByText(/build confidence and get test-ready with free practice activities/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '← Back to Dashboard' })).toHaveAttribute('href', '/dashboard');
+    expect(screen.getByRole('link', { name: /purchase a test/i })).toBeInTheDocument();
   });
 
-  it('does not render any top-bar H1 on /results', () => {
+  it('renders H1 title on /settings', () => {
+    renderAppShell('/settings');
+    expect(screen.getByRole('heading', { level: 1, name: 'Settings' })).toBeInTheDocument();
+  });
+
+  it('renders H1 title on /dashboard', () => {
+    renderAppShell('/dashboard');
+    expect(screen.getByRole('heading', { level: 1, name: 'My Dashboard' })).toBeInTheDocument();
+  });
+
+  it('renders H1 title on /practice', () => {
+    renderAppShell('/practice');
+    expect(screen.getByRole('heading', { level: 1, name: 'Practice' })).toBeInTheDocument();
+  });
+
+  it('renders H1 title on /results', () => {
     renderAppShell('/results');
-    expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'My Results' })).toBeInTheDocument();
   });
 
-  it('does not render any top-bar H1 on /book', () => {
+  it('renders H1 title on /book', () => {
     renderAppShell('/book');
-    expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Purchase Test' })).toBeInTheDocument();
   });
 
-  it('does not render any top-bar H1 on /test-prepare', () => {
+  it('renders H1 title on /test-prepare', () => {
     renderAppShell('/test-prepare');
-    expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Before You Start' })).toBeInTheDocument();
   });
 
-  it('does not render any top-bar H1 on /check-in/about', () => {
+  it('renders H1 title on /check-in/about', () => {
     renderAppShell('/check-in/about');
-    expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Test Check-in' })).toBeInTheDocument();
   });
 
-  it('does not render any top-bar H1 on /check-in/identity', () => {
+  it('renders H1 title on /check-in/identity', () => {
     renderAppShell('/check-in/identity');
-    expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Test Check-in' })).toBeInTheDocument();
   });
 
   it('renders the Purchase a Test action link on every route', () => {

@@ -145,13 +145,13 @@ export const Modal: React.FC<ModalProps> = ({
         onKeyDown={handleKeyDown}
       >
         {title && (
-          <div className="flex items-center justify-between gap-4 p-6 border-b border-[#DDE2E7]">
-            <h2 id={titleId} className="m-0 text-xl font-semibold text-[#232D3F]">
+          <div className="flex items-center justify-between gap-4 p-6 border-b border-border-default">
+            <h2 id={titleId} className="m-0 text-xl font-semibold text-ink">
               {title}
             </h2>
             <button
               type="button"
-              className="flex-shrink-0 inline-flex items-center justify-center w-8 h-8 border-none bg-transparent rounded text-[#55657B] cursor-pointer hover:bg-[#f5f5f5] focus-visible:outline-2 focus-visible:outline-[#FF6A00] focus-visible:outline-offset-2"
+              className="flex-shrink-0 inline-flex items-center justify-center w-8 h-8 border-none bg-transparent rounded text-slate cursor-pointer hover:bg-surface-light focus-visible:outline-2 focus-visible:outline-brand-primary focus-visible:outline-offset-2"
               aria-label={closeLabel}
               onClick={onClose}
             >
