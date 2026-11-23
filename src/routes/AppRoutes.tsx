@@ -16,6 +16,7 @@ import TestPrepare from '../pages/TestPrepare/TestPrepare';
 import CheckInAbout from '../pages/CheckInAbout/CheckInAbout';
 import CheckInIdentity from '../pages/CheckInIdentity/CheckInIdentity';
 import ForgetPassword from '../pages/ForgetPassword/ForgetPassword';
+import AppShell from '../layouts/AppShell';
 import {
   signIn as authSignIn,
   getCurrentUser,
@@ -24,6 +25,7 @@ import {
   getAuthSession,
 } from '@services/auth';
 import { useAuth } from '@hooks/useAuth';
+import { useUserProfileContext } from '@context/UserProfileContext';
 import { EnrolmentService } from '@services';
 import { CreateTestTakerRequest, Gender } from '@services/enrolment';
 import {
@@ -39,10 +41,12 @@ import {
 function SignInPage() {
   const navigate = useNavigate();
   const { setAuthenticatedUser } = useAuth();
+  const { refreshProfile } = useUserProfileContext();
 
   /**
    * Create test taker profile if pending data exists
    * Only called after user is authenticated and has a valid session
+   * Triggers profile refresh after successful creation so sidebar updates immediately
    */
   const createPendingProfile = async (): Promise<void> => {
     const pendingData = getPendingProfile();
@@ -71,11 +75,11 @@ function SignInPage() {
         familyName: pendingData.lastName,
         dateOfBirth: pendingData.dateOfBirth,
         gender: (pendingData.gender || 'PREFER_NOT_TO_SAY') as Gender,
-        termsAccepted: pendingData.termsAccepted,  // ✅ Now included from pending data
-        termsVersion: pendingData.termsVersion,    // ✅ Now included from pending data
-        guardian: pendingData.guardian ? {          // ✅ Guardian data if under 18
+        termsAccepted: pendingData.termsAccepted,
+        termsVersion: pendingData.termsVersion,
+        guardian: pendingData.guardian ? {
           name: `${pendingData.guardian.firstName} ${pendingData.guardian.lastName}`,
-          dateOfBirth: pendingData.guardian.dateOfBirth,  // ✅ USE GUARDIAN'S OWN DOB
+          dateOfBirth: pendingData.guardian.dateOfBirth,
           email: pendingData.guardian.email,
           relationship: pendingData.guardian.relationship,
           termsAccepted: pendingData.guardian.termsAccepted,
@@ -87,6 +91,11 @@ function SignInPage() {
       
       // Clear pending data after successful creation
       clearPendingProfile();
+
+      // ✅ NEW: Refresh profile in context so sidebar updates immediately
+      // Without waiting for page navigation or refresh
+      await refreshProfile();
+      console.log('[SignInPage] Profile refreshed after creation - sidebar should update');
     } catch (profileError) {
       console.error('❌ [SignInPage] POST FAILED');
       console.error('[SignInPage] Error:', {
@@ -223,48 +232,27 @@ export function AppRoutes(): React.JSX.Element {
 
   return (
     <Routes>
-      {/* Sign in page - Now uses SignInPage component for proper hook access */}
+      {/* Public Auth Routes */}
       <Route path="/signin" element={<SignInPage />} />
-
-      {/* Sign up page */}
       <Route path="/signup" element={<SignUp onSubmit={handleSignUpSubmit} />} />
-
-      {/* Email confirmation page */}
-      <Route
-        path="/confirm-signup"
-        element={<ConfirmSignUp onSubmit={handleConfirmSignUpSubmit} />}
-      />
-
-      {/* Forget password page */}
+      <Route path="/confirm-signup" element={<ConfirmSignUp onSubmit={handleConfirmSignUpSubmit} />} />
       <Route path="/forget-password" element={<ForgetPassword />} />
 
-      {/* Protected dashboard route */}
-      <Route path="/dashboard" element={<Dashboard />} />
+      {/* Protected routes with AppShell layout */}
+      <Route element={<AppShell />}>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/results" element={<Results />} />
+        <Route path="/practice" element={<Practice />} />
+        <Route path="/book" element={<PurchaseTest />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/test-prepare" element={<TestPrepare />} />
+        <Route path="/check-in" element={<Navigate to="/check-in/about" replace />} />
+        <Route path="/check-in/about" element={<CheckInAbout />} />
+        <Route path="/check-in/identity" element={<CheckInIdentity />} />
+        <Route path="/settings" element={<Settings />} />
+      </Route>
 
-      {/* Results page route */}
-      <Route path="/results" element={<Results />} />
-
-      {/* Purchase test page route */}
-      <Route path="/book" element={<PurchaseTest />} />
-
-      {/* Checkout page route */}
-      <Route path="/checkout" element={<Checkout />} />
-
-      {/* Practice page route */}
-      <Route path="/practice" element={<Practice />} />
-
-      {/* Before-you-start page (opened from each practice test) */}
-      <Route path="/test-prepare" element={<TestPrepare />} />
-
-      {/* Test check-in (opened from the dashboard "Check-in" button) */}
-      <Route path="/check-in" element={<Navigate to="/check-in/about" replace />} />
-      <Route path="/check-in/about" element={<CheckInAbout />} />
-      <Route path="/check-in/identity" element={<CheckInIdentity />} />
-
-      {/* Settings page route */}
-      <Route path="/settings" element={<Settings />} />
-
-      {/* Default redirect to signin */}
+      {/* Default redirect */}
       <Route path="/" element={<Navigate to="/signin" replace />} />
     </Routes>
   );

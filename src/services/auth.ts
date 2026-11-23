@@ -412,8 +412,12 @@ export async function confirmResetPassword(
  */
 export async function changePassword(oldPassword: string, newPassword: string): Promise<void> {
   try {
+    console.log('changePassword: Updating password...');
     await amplifyUpdatePassword({ oldPassword, newPassword });
+    console.log('✅ changePassword: Password updated successfully.');
   } catch (error) {
+    console.error('❌ changePassword: Password change failed:', error);
+
     if (error instanceof Error) {
       const message = error.message;
 
@@ -432,6 +436,7 @@ export async function changePassword(oldPassword: string, newPassword: string): 
         throw new Error('Network error. Please check your connection and try again.');
       }
     }
+
     throw new Error('Password change failed. Please try again.');
   }
 }

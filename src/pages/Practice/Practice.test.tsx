@@ -1,34 +1,10 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import Practice from './Practice';
 
 vi.mock('@hooks/useAuth', () => ({
   useAuth: () => ({ user: null, isLoading: false }),
-}));
-
-vi.mock('@layouts/AppShell', () => ({
-  default: ({
-    children,
-    title,
-    backTo,
-    backLabel,
-  }: {
-    children: React.ReactNode;
-    title?: string;
-    backTo?: string;
-    backLabel?: string;
-  }) => (
-    <div>
-      {title && (
-        <>
-          {backTo && <a href={backTo}>{backLabel ?? '← Back to Dashboard'}</a>}
-          <h1>{title}</h1>
-        </>
-      )}
-      {children}
-    </div>
-  ),
 }));
 
 function renderPage() {
@@ -44,67 +20,140 @@ describe('Practice', () => {
     vi.clearAllMocks();
   });
 
-  it('renders the page heading', () => {
+  it('renders the page heading "Practice"', () => {
     renderPage();
-    expect(screen.getByRole('heading', { name: /^practice$/i })).toBeInTheDocument();
+
+    expect(
+      screen.getByRole('heading', {
+        name: /practice is coming soon/i,
+      })
+    ).toBeInTheDocument();
   });
 
-  it('renders all 12 sessions when All skills is selected', () => {
+  it('renders the "Practice is coming soon" heading', () => {
     renderPage();
-    // 12 session cards — each is a link to /test-prepare
-    const sessionLinks = screen
-      .getAllByRole('link')
-      .filter((l) => l.getAttribute('href') === '/test-prepare');
-    // Featured banner + 12 session cards all link to /test-prepare
-    expect(sessionLinks.length).toBeGreaterThanOrEqual(12);
+
+    expect(
+      screen.getByRole('heading', {
+        name: /practice is coming soon/i,
+      })
+    ).toBeInTheDocument();
   });
 
-  it('"All skills" filter button is active by default', () => {
+  it('renders the "How the test works" link pointing to /test-prepare', () => {
     renderPage();
-    const allBtn = screen.getByRole('button', { name: /all skills/i });
-    expect(allBtn).toHaveAttribute('aria-pressed', 'true');
-  });
 
-  it('clicking a skill filter shows only sessions of that type', () => {
-    renderPage();
-    fireEvent.click(screen.getByRole('button', { name: /^listening$/i }));
-    // Check that at least one session is visible after filtering
-    // The filter should show Listening sessions
-    const sessionLinks = screen
-      .getAllByRole('link')
-      .filter((l) => l.getAttribute('href') === '/test-prepare');
-    expect(sessionLinks.length).toBeGreaterThan(0);
-  });
+    const testLink = screen.getByRole('link', {
+      name: /how the test works/i,
+    });
 
-  it('active filter button has aria-pressed="true"', () => {
-    renderPage();
-    fireEvent.click(screen.getByRole('button', { name: /^reading$/i }));
-    expect(screen.getByRole('button', { name: /^reading$/i })).toHaveAttribute(
-      'aria-pressed',
-      'true'
-    );
-    expect(screen.getByRole('button', { name: /all skills/i })).toHaveAttribute(
-      'aria-pressed',
-      'false'
+    expect(testLink).toHaveAttribute(
+      'href',
+      '/test-prepare'
     );
   });
 
-  it('completed sessions display a score badge', () => {
+  it('renders the "What\'s coming" section', () => {
     renderPage();
-    // Sessions with done:true and score !== null show a score badge (score/12 rounded)
-    // Email sorting: score 82 -> 7/10, Follow Instructions: 68 -> 6/10, Announcements: 75 -> 6/10
-    const scoreBadges = screen.getAllByText(/\/10/);
-    expect(scoreBadges.length).toBeGreaterThanOrEqual(3);
+
+    expect(
+      screen.getByRole('heading', {
+        name: /what's coming/i,
+      })
+    ).toBeInTheDocument();
   });
 
-  it('renders the back link pointing to /dashboard', () => {
+  it('renders the featured test tile with "Try a short test"', () => {
     renderPage();
-    const backLink = screen.getByRole('link', { name: /dashboard/i });
-    expect(backLink).toHaveAttribute('href', '/dashboard');
+
+    expect(
+      screen.getByText(/try a short test/i)
+    ).toBeInTheDocument();
+
+    // Use getAllByText to get the specific badge, not the heading
+    const comingSoonElements = screen.getAllByText(/coming soon/i);
+    expect(comingSoonElements.length).toBeGreaterThan(1); // heading + badge
   });
 
-  it('renders the featured practice test banner', () => {
+  it('renders all four skills tiles', () => {
     renderPage();
-    expect(screen.getByText(/four skills practice test/i)).toBeInTheDocument();
+
+    expect(
+      screen.getByText(/listening practice/i)
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByText(/reading practice/i)
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByText(/speaking practice/i)
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByText(/writing practice/i)
+    ).toBeInTheDocument();
+  });
+
+  it('renders only the How the test works link', () => {
+    renderPage();
+
+    const allLinks = screen.getAllByRole('link');
+
+    expect(allLinks).toHaveLength(1);
+
+    expect(allLinks[0]).toHaveAttribute(
+      'href',
+      '/test-prepare'
+    );
+  });
+
+  it('renders a coming soon badge', () => {
+    renderPage();
+
+    // Use getAllByText to handle multiple "coming soon" elements (heading + badge)
+    const comingSoonElements = screen.getAllByText(/coming soon/i);
+    // Should have at least the heading and the badge
+    expect(comingSoonElements.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('renders preview tiles as non-interactive elements', () => {
+    renderPage();
+
+    const disabledElements =
+      document.querySelectorAll(
+        '[aria-disabled="true"]'
+      );
+
+    expect(disabledElements).toHaveLength(5);
+  });
+
+  it('renders skill pills', () => {
+    renderPage();
+
+    expect(
+      screen.getByText('Listening')
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByText('Reading')
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByText('Speaking')
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByText('Writing')
+    ).toBeInTheDocument();
+  });
+
+  it('has no buttons rendered', () => {
+    renderPage();
+
+    const buttons =
+      screen.queryAllByRole('button');
+
+    expect(buttons).toHaveLength(0);
   });
 });

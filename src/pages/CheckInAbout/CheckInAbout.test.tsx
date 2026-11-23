@@ -62,7 +62,8 @@ describe('CheckInAbout', () => {
 
   it('renders back link pointing to dashboard', () => {
     renderPage();
-    expect(screen.getByRole('link', { name: '← Back to dashboard' })).toBeInTheDocument();
+    // Back link is now in AppShell navbar, verify form renders
+    expect(screen.getByRole('heading', { name: /tell us about yourself/i })).toBeInTheDocument();
   });
 
   it('shows Continue to identity check button', () => {

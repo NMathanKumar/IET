@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import AppIcon from '@components/AppIcon';
-import AppShell from '../../layouts/AppShell';
 
 type CheckStatus = 'ok' | 'warn' | 'pending';
 
@@ -36,16 +35,8 @@ export default function TestPrepare() {
   const allReady = agreedEnv && agreedOnce;
 
   return (
-    <AppShell>
-      <div className="w-full max-w-[900px] mx-auto pb-12 md:pb-12">
-        {/* Back link */}
-        <Link
-          to="/practice"
-          className="mb-6 block text-xs font-semibold no-underline text-[var(--color-slate)] md:mb-6"
-        >
-          ← Back to practice
-        </Link>
-
+    <>
+      <div className="mx-auto w-full max-w-[760px] pb-12 md:pb-12">
         {/* Hero section */}
         <div className="mb-9 text-center md:mb-9">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-brand-orange)]">
@@ -205,6 +196,6 @@ export default function TestPrepare() {
           </button>
         </div>
       </div>
-    </AppShell>
+    </>
   );
 }

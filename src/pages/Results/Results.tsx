@@ -4,7 +4,6 @@ import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer } fro
 import AppIcon from '@components/AppIcon';
 import { EnrolmentService } from '@services';
 import type { Enrolment } from '@services/enrolment';
-import AppShell from '../../layouts/AppShell';
 
 type SkillEntry = {
   skill: string;
@@ -194,15 +193,11 @@ export default function Results() {
   // Show loading state
   if (isLoading) {
     return (
-      <AppShell
-        title="My Results"
-        subtitle="Your completed tests and their results will appear here."
-        backTo="/dashboard"
-      >
-        <div className="max-w-[900px] mx-auto pb-12">
+      <>
+        <div className="max-w-[920px] mx-auto pb-12">
           <p className="text-center text-[14px] text-[#55657b]">Loading your results...</p>
         </div>
-      </AppShell>
+      </>
     );
   }
 
@@ -226,16 +221,8 @@ export default function Results() {
   };
 
   return (
-    <AppShell
-      title="My Results"
-      subtitle={
-        hasResults
-          ? 'Your completed tests and their results.'
-          : 'Your completed tests and their results will appear here.'
-      }
-      backTo="/dashboard"
-    >
-      <div className="max-w-[900px] mx-auto pb-12">
+    <>
+      <div className="max-w-[920px] mx-auto pb-12">
         {!hasResults ? (
           // EMPTY STATE
           <>
@@ -535,6 +522,6 @@ export default function Results() {
           </>
         ) : null}
       </div>
-    </AppShell>
+    </>
   );
 }

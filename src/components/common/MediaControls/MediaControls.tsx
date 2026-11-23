@@ -40,7 +40,7 @@ export const MediaControls: React.FC<MediaControlsProps> = ({
   className = '',
 }) => {
   const controlsClass = [
-    'flex flex-col gap-4 p-4 bg-white border border-[#DDE2E7] rounded-md',
+    'flex flex-col gap-4 p-4 bg-white border border-border-default rounded-md',
     className,
   ]
     .filter(Boolean)
@@ -66,9 +66,9 @@ export const MediaControls: React.FC<MediaControlsProps> = ({
     <div className={controlsClass} aria-label={label}>
       {/* Time display */}
       <div className="flex items-center justify-between gap-4">
-        <span className="text-xs text-[#55657B] flex-shrink-0">Time:</span>
+        <span className="text-xs text-slate flex-shrink-0">Time:</span>
         <span
-          className="font-mono text-sm font-semibold text-[#232D3F]"
+          className="font-mono text-sm font-semibold text-ink"
           aria-label={`Current time: ${formatTime(currentTime)} of ${formatTime(duration)}`}
           aria-live="off"
         >
@@ -81,7 +81,7 @@ export const MediaControls: React.FC<MediaControlsProps> = ({
         <div className="flex-1 min-w-[100px]">
           <button
             type="button"
-            className="w-full h-1 bg-[#DDE2E7] rounded-full cursor-pointer relative overflow-hidden"
+            className="w-full h-1 bg-border-default rounded-full cursor-pointer relative overflow-hidden"
             onClick={handleProgressClick}
             aria-label={`Seek to position: ${formatTime(currentTime)} of ${formatTime(duration)}`}
             aria-valuemin={0}
@@ -91,12 +91,12 @@ export const MediaControls: React.FC<MediaControlsProps> = ({
             role="slider"
           >
             <div
-              className="h-full bg-[#FF6A00] rounded-full transition-all"
+              className="h-full bg-brand-primary rounded-full transition-all"
               style={{ width: `${progressPercent}%` }}
             />
           </button>
         </div>
-        <span className="text-xs text-[#55657B] whitespace-nowrap flex-shrink-0">
+        <span className="text-xs text-slate whitespace-nowrap flex-shrink-0">
           {formatTime(duration)}
         </span>
       </div>
@@ -105,11 +105,11 @@ export const MediaControls: React.FC<MediaControlsProps> = ({
       <div className="flex items-center justify-center gap-2">
         <button
           type="button"
-          className={`inline-flex items-center justify-center w-10 h-10 border-none rounded text-[#232D3F] cursor-pointer transition-all p-0 ${
+          className={`inline-flex items-center justify-center w-10 h-10 border-none rounded text-ink cursor-pointer transition-all p-0 ${
             !isPlaying
-              ? 'bg-[#FF6A00] text-white hover:bg-[#E85A00]'
-              : 'bg-[#efefef] hover:bg-[#ddd]'
-          } focus-visible:outline-2 focus-visible:outline-[#FF6A00] focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed`}
+              ? 'bg-brand-primary text-white hover:bg-brand-primary-hover'
+              : 'bg-grey-lighter hover:bg-grey-medium'
+          } focus-visible:outline-2 focus-visible:outline-brand-primary focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed`}
           onClick={onPlay}
           disabled={isPlaying}
           aria-label="Play"
@@ -121,11 +121,11 @@ export const MediaControls: React.FC<MediaControlsProps> = ({
         </button>
         <button
           type="button"
-          className={`inline-flex items-center justify-center w-10 h-10 border-none rounded text-[#232D3F] cursor-pointer transition-all p-0 ${
+          className={`inline-flex items-center justify-center w-10 h-10 border-none rounded text-ink cursor-pointer transition-all p-0 ${
             isPlaying
-              ? 'bg-[#FF6A00] text-white hover:bg-[#E85A00]'
-              : 'bg-[#efefef] hover:bg-[#ddd]'
-          } focus-visible:outline-2 focus-visible:outline-[#FF6A00] focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed`}
+              ? 'bg-brand-primary text-white hover:bg-brand-primary-hover'
+              : 'bg-grey-lighter hover:bg-grey-medium'
+          } focus-visible:outline-2 focus-visible:outline-brand-primary focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed`}
           onClick={onPause}
           disabled={!isPlaying}
           aria-label="Pause"

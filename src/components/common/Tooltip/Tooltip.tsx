@@ -76,7 +76,7 @@ export const Tooltip: React.FC<TooltipProps> = ({ content, placement = 'top', ch
         <span
           role="tooltip"
           id={tooltipId}
-          className={`absolute z-[1070] bg-[#1a1a1a] text-white text-xs leading-normal py-1 px-2 rounded max-w-60 w-max pointer-events-none shadow-sm ${placementClasses[placement]}`}
+          className={`absolute z-[1070] bg-grey-darker text-white text-xs leading-normal py-1 px-2 rounded max-w-60 w-max pointer-events-none shadow-sm ${placementClasses[placement]}`}
         >
           {content}
         </span>

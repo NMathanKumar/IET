@@ -43,7 +43,7 @@ export const Card: React.FC<CardProps> = ({
   className = '',
 }) => {
   const baseClasses = 'bg-white rounded-md overflow-hidden flex flex-col';
-  const borderClass = bordered ? 'border border-[#DDE2E7]' : '';
+  const borderClass = bordered ? 'border border-border-default' : '';
   const shadowClasses = getShadowClasses(shadow);
   const paddingClasses = getPaddingClasses(padding);
 
@@ -54,12 +54,12 @@ export const Card: React.FC<CardProps> = ({
   return (
     <div className={cardClass}>
       {title && (
-        <div className="border-b border-[#DDE2E7] pb-4 mb-4">
+        <div className="border-b border-border-default pb-4 mb-4">
           <h3 className="m-0 text-lg font-semibold text-slate-900">{title}</h3>
         </div>
       )}
       <div className="flex-1">{children}</div>
-      {footer && <div className="border-t border-[#DDE2E7] mt-4 pt-4">{footer}</div>}
+      {footer && <div className="border-t border-border-default mt-4 pt-4">{footer}</div>}
     </div>
   );
 };

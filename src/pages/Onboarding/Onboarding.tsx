@@ -163,12 +163,12 @@ export default function OnboardingModal({ isOpen, onClose, onExit }: OnboardingM
         {/* Modal card */}
         <div
           ref={modalRef}
-          className="w-full max-w-[820px] bg-white border-[1.5px] border-[#dde2e7] rounded-[22px] overflow-hidden shadow-[0_24px_60px_rgba(35,45,63,0.14)] pointer-events-auto"
+          className="w-full max-w-[820px] bg-white border-[1.5px] border-border-default rounded-[22px] overflow-hidden shadow-[0_24px_60px_rgba(35,45,63,0.14)] pointer-events-auto"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Close button */}
           <button
-            className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center text-[#55657b] hover:text-[#232d3f] transition-colors text-xl"
+            className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center text-slate hover:text-ink transition-colors text-xl"
             onClick={handleExit}
             aria-label="Close onboarding"
             title="Close (Esc)"
@@ -181,32 +181,32 @@ export default function OnboardingModal({ isOpen, onClose, onExit }: OnboardingM
           <div className="grid grid-cols-1 lg:grid-cols-[1.55fr_0.65fr] gap-11 min-h-[360px] p-12 items-center">
             {/* Left: Text content */}
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.09em] text-[#eb7900] mb-2.5 m-0">
+              <p className="text-[11px] font-bold uppercase tracking-[0.09em] text-brand-primary mb-2.5 m-0">
                 Welcome, {userName || 'there'} <span aria-hidden="true">·</span> {stepIndex + 1} of {ONBOARDING_STEPS.length}
               </p>
               <h1
                 id="onboarding-title"
-                className="text-[clamp(27px,4vw,38px)] font-bold leading-[1.16] text-[#232d3f] mb-3 font-['Farro',sans-serif]"
+                className="text-[clamp(27px,4vw,38px)] font-bold leading-[1.16] text-ink mb-3 font-['Farro',sans-serif]"
               >
                 {step.title}
               </h1>
-              <p className="text-[15px] leading-[1.7] text-[#55657b] mb-4.5 max-w-[560px]">
+              <p className="text-[15px] leading-[1.7] text-slate mb-4.5 max-w-[560px]">
                 {step.description}
               </p>
 
               {/* Detail with checkmark */}
               <div className="flex gap-2.25 mb-6 items-start">
-                <span className="flex items-center justify-center w-[19px] h-[19px] flex-shrink-0 rounded-full bg-[#fff3ea] text-[#eb7900] text-[11px] font-black">
+                <span className="flex items-center justify-center w-[19px] h-[19px] flex-shrink-0 rounded-full bg-surface-brand text-brand-primary text-[11px] font-black">
                   ✓
                 </span>
-                <p className="text-[12px] text-[#55657b] m-0 leading-[1.5]">
+                <p className="text-[12px] text-slate m-0 leading-[1.5]">
                   {step.detail}
                 </p>
               </div>
 
               {/* Primary action button */}
               <button
-                className="inline-flex items-center gap-2.25 px-4 py-2.5 border-[1.5px] border-[rgba(235,121,0,0.38)] rounded-[8px] bg-white text-[#232d3f] hover:border-[#eb7900] hover:bg-[#fff3ea] cursor-pointer font-bold text-[13px] transition-colors duration-160"
+                className="inline-flex items-center gap-2.25 px-4 py-2.5 border-[1.5px] border-brand-primary/38 rounded-[8px] bg-white text-ink hover:border-brand-primary hover:bg-surface-brand cursor-pointer font-bold text-[13px] transition-colors duration-160"
                 type="button"
                 onClick={() => handleAction(step.destination)}
               >
@@ -216,18 +216,18 @@ export default function OnboardingModal({ isOpen, onClose, onExit }: OnboardingM
             </div>
 
             {/* Right: Visual */}
-            <div className="hidden lg:flex flex-col items-center justify-center gap-4.5 min-h-[220px] p-6 border-[1.5px] border-[rgba(255,106,0,0.2)] rounded-[16px] bg-[#fff3ea] text-[#eb7900] text-center" aria-hidden="true">
-              <div className="flex items-center justify-center w-[104px] h-[104px] border-2 border-[rgba(255,106,0,0.22)] rounded-full bg-white shadow-[0_10px_30px_rgba(235,121,0,0.12)]">
+            <div className="hidden lg:flex flex-col items-center justify-center gap-4.5 min-h-[220px] p-6 border-[1.5px] border-brand-primary/20 rounded-[16px] bg-surface-brand text-brand-primary text-center" aria-hidden="true">
+              <div className="flex items-center justify-center w-[104px] h-[104px] border-2 border-brand-primary/22 rounded-full bg-white shadow-[0_10px_30px_rgba(235,121,0,0.12)]">
                 <AppIcon name={step.icon} size={48} />
               </div>
-              <span className="text-[12px] font-bold text-[#232d3f]">
+              <span className="text-[12px] font-bold text-ink">
                 {stepIndex === 0 ? 'Build confidence' : 'Take your next step'}
               </span>
             </div>
           </div>
 
           {/* Footer */}
-          <footer className="flex min-h-[82px] p-4.5 lg:p-[18px_28px_18px_50px] items-center justify-between gap-6 border-t border-[#e9edf0] bg-[#fcfcfb]">
+          <footer className="flex min-h-[82px] p-4.5 lg:p-[18px_28px_18px_50px] items-center justify-between gap-6 border-t border-border-subtle bg-[#fcfcfb]">
             {/* Progress dots */}
             <div className="flex items-center gap-1.75">
               {ONBOARDING_STEPS.map((item, index) => (
@@ -236,8 +236,8 @@ export default function OnboardingModal({ isOpen, onClose, onExit }: OnboardingM
                   type="button"
                   className={`border-0 rounded-[10px] cursor-pointer transition-all duration-160 p-0 h-2.25 ${
                     index === stepIndex
-                      ? 'w-3 lg:w-[30px] bg-[#eb7900]'
-                      : 'w-2.25 bg-[#d9dde1]'
+                      ? 'w-3 lg:w-[30px] bg-brand-primary'
+                      : 'w-2.25 bg-border-light-alt'
                   }`}
                   aria-label={`Go to step ${index + 1}: ${item.title}`}
                   aria-current={index === stepIndex ? 'step' : undefined}
@@ -250,7 +250,7 @@ export default function OnboardingModal({ isOpen, onClose, onExit }: OnboardingM
             <div className="flex items-center justify-end gap-2.5">
               {stepIndex > 0 && (
                 <button
-                  className="min-h-[42px] px-3.5 py-2.5 border-0 rounded-[8px] bg-transparent text-[#55657b] hover:bg-[#f5f5f5] hover:text-[#232d3f] cursor-pointer text-[12px] font-bold transition-colors"
+                  className="min-h-[42px] px-3.5 py-2.5 border-0 rounded-[8px] bg-transparent text-slate hover:bg-border-subtle hover:text-ink cursor-pointer text-[12px] font-bold transition-colors"
                   type="button"
                   onClick={() => setStepIndex(stepIndex - 1)}
                 >
@@ -258,7 +258,7 @@ export default function OnboardingModal({ isOpen, onClose, onExit }: OnboardingM
                 </button>
               )}
               <button
-                className="min-h-[42px] px-3.5 py-2.5 border-0 rounded-[8px] bg-transparent text-[#55657b] hover:bg-[#f5f5f5] hover:text-[#232d3f] cursor-pointer text-[12px] font-bold transition-colors"
+                className="min-h-[42px] px-3.5 py-2.5 border-0 rounded-[8px] bg-transparent text-slate hover:bg-border-subtle hover:text-ink cursor-pointer text-[12px] font-bold transition-colors"
                 type="button"
                 onClick={handleExit}
               >
@@ -266,7 +266,7 @@ export default function OnboardingModal({ isOpen, onClose, onExit }: OnboardingM
               </button>
               {stepIndex < ONBOARDING_STEPS.length - 1 && (
                 <button
-                  className="inline-flex items-center justify-center gap-2 min-h-[42px] min-w-[100px] px-3.5 py-2.5 border-0 rounded-[8px] bg-[#eb7900] text-white cursor-pointer text-[12px] font-bold hover:bg-[#ad4300] transition-colors shadow-[0_7px_18px_rgba(235,121,0,0.2)]"
+                  className="inline-flex items-center justify-center gap-2 min-h-[42px] min-w-[100px] px-3.5 py-2.5 border-0 rounded-[8px] bg-brand-primary text-white cursor-pointer text-[12px] font-bold hover:bg-brand-primary-hover transition-colors shadow-[0_7px_18px_rgba(235,121,0,0.2)]"
                   type="button"
                   onClick={() => setStepIndex(stepIndex + 1)}
                 >

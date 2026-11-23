@@ -17,11 +17,11 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 
 const getVariantClasses = (variant: string): string => {
   const variants: Record<string, string> = {
-    primary: 'bg-[#EB7900] hover:bg-[#ad4300] text-white',
-    secondary: 'bg-gray-100 hover:bg-gray-200 text-slate-900 border border-[#DDE2E7]',
-    danger: 'bg-[#E01F26] hover:bg-[#C01520] text-white',
-    outline: 'border-2 border-[#EB7900] text-[#EB7900] hover:bg-orange-50',
-    ghost: 'text-[#EB7900] hover:bg-orange-50',
+    primary: 'bg-brand-primary hover:bg-brand-primary-hover text-white',
+    secondary: 'bg-gray-100 hover:bg-gray-200 text-slate-900 border border-border-default',
+    danger: 'bg-brand-red hover:bg-brand-red-hover text-white',
+    outline: 'border-2 border-brand-primary text-brand-primary hover:bg-orange-50',
+    ghost: 'text-brand-primary hover:bg-orange-50',
   };
   return variants[variant] || variants.primary;
 };
@@ -48,7 +48,7 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const baseClasses =
-    'inline-flex items-center justify-center border-none rounded transition-colors font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EB7900] disabled:opacity-60 disabled:cursor-not-allowed';
+    'inline-flex items-center justify-center border-none rounded transition-colors font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary disabled:opacity-60 disabled:cursor-not-allowed';
   const variantClasses = getVariantClasses(variant);
   const sizeClasses = getSizeClasses(size);
   const widthClass = fullWidth ? 'w-full' : '';

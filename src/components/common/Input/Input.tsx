@@ -36,14 +36,10 @@ export const Input: React.FC<InputProps> = ({
   autoComplete,
   ...props
 }) => {
-  // Design tokens from variables.css
-  const focusColor = '#FF6A00'; // brand-primary
-  const focusRing = 'rgba(255, 106, 0, 0.1)';
-
   const inputClasses = `px-3.5 py-2.75 text-sm border rounded-lg font-sans transition-all ${
     error
       ? 'border-red-600 focus:outline-none focus:border-red-600 focus:ring-3 focus:ring-red-100'
-      : `border-[#DDE2E7] focus:outline-none focus:border-[${focusColor}] focus:ring-3 focus:ring-[${focusRing}]`
+      : `border-border-default focus:outline-none focus:border-brand-primary focus:ring-3 focus:ring-brand-primary/[0.1]`
   } ${disabled ? 'bg-gray-100 cursor-not-allowed text-gray-600' : ''} ${className}`;
 
   const errorId = error && name ? `${name}-error` : undefined;
@@ -56,10 +52,10 @@ export const Input: React.FC<InputProps> = ({
       {label && (
         <label
           htmlFor={props.id || name}
-          className="font-['Inter'] text-xs font-bold uppercase tracking-[0.66px] text-[#55657b]"
+          className="font-['Inter'] text-xs font-bold uppercase tracking-[0.66px] text-slate"
         >
           {label}
-          {required && <span className="text-[#eb7900] ml-1">*</span>}
+          {required && <span className="text-brand-primary ml-1">*</span>}
         </label>
       )}
       <input
@@ -84,7 +80,7 @@ export const Input: React.FC<InputProps> = ({
         </span>
       )}
       {helperText && !error && (
-        <span id={helperId} className="text-xs text-[#55657b] -mt-1">
+        <span id={helperId} className="text-xs text-slate -mt-1">
           {helperText}
         </span>
       )}

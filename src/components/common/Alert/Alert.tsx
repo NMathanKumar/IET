@@ -114,7 +114,7 @@ export const Alert: React.FC<AlertProps> = ({
       {closeable && (
         <button
           type="button"
-          className="flex-shrink-0 bg-transparent border-none p-0 cursor-pointer text-inherit opacity-70 transition-opacity hover:opacity-100 flex items-center justify-center w-6 h-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00] rounded"
+          className="flex-shrink-0 bg-transparent border-none p-0 cursor-pointer text-inherit opacity-70 transition-opacity hover:opacity-100 flex items-center justify-center w-6 h-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary rounded"
           onClick={onClose}
           aria-label="Close alert"
         >

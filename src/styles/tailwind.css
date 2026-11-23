@@ -2,20 +2,34 @@
 
 /* Custom Figma design system colors */
 @theme {
+  /* Brand Primary (Source of Truth) */
+  --color-brand-primary: #EB7900;
+  --color-brand-primary-hover: #E85A00;
+  --color-brand-primary-active: #D14900;
+
+  /* Brand Colors - Aliases to Primary */
+  --color-action-primary: var(--color-brand-primary);
+  --color-brand-orange: var(--color-brand-primary);
+  --color-action: var(--color-brand-primary);
+  --color-action-hover: var(--color-brand-primary-hover);
+  --color-action-active: var(--color-brand-primary-active);
+  --color-focus-ring: var(--color-brand-primary);
+  --color-score-highlight: #FF8300;
+
+  /* Other Brand Colors */
   --color-ink: #232D3F;
   --color-slate: #55657B;
   --color-cream: #FFF3EA;
-  --color-action-primary: #EB7900;
-  --color-score-highlight: #FF8300;
-  --color-brand-orange: #EB7900;
   --color-brand-yellow: #FFC01E;
   --color-brand-red: #E01F26;
+  --color-brand-red-hover: #C01520;
   --color-surface-subtle: #F7F9FA;
   --color-border-default: #DDE2E7;
   --color-border-subtle: #E9EDF0;
   --color-muted: #f5f5f5;
   --color-muted-foreground: #8d8f91;
 
+  /* Shadows */
   --shadow-card: 0 1px 2px rgba(35, 45, 63, 0.04), 0 8px 24px rgba(35, 45, 63, 0.06);
   --shadow-card-hover: 0 2px 4px rgba(35, 45, 63, 0.05), 0 12px 28px rgba(35, 45, 63, 0.09);
   --shadow-sm: 0 1px 2px rgba(35, 45, 63, 0.04);
@@ -24,7 +38,72 @@
   --shadow-xl: 0 12px 32px rgba(35, 45, 63, 0.16);
   --shadow-2xl: 0 18px 50px rgba(35, 45, 63, 0.13);
 
+  /* Border Radius */
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
+
+  /* Semantic Tokens */
+  --color-on-action: #ffffff;
+  --color-danger-action: #E01F26;
+  --color-danger-action-hover: #C01520;
+  --color-focus-ring-faint: rgba(235, 121, 0, 0.1);
+  --color-danger-ring-faint: rgba(224, 31, 38, 0.1);
+
+  /* Text Colors */
+  --color-text-primary: #232D3F;
+  --color-text-secondary: #55657B;
+  --color-text-muted: #6b7280;
+
+  /* Surface Colors */
+  --color-surface: #ffffff;
+  --color-surface-brand: #FFF3EA;
+
+  /* Border Colors */
+  --color-border: #DDE2E7;
+  --color-border-light: #f0f3f7;
+
+  /* Status Colors */
+  --color-success: #2e7d32;
+  --color-warning: #f9a825;
+  --color-info: #17a2b8;
+  --color-error: #E01F26;
+
+  /* Overlay */
+  --color-overlay: rgba(0, 0, 0, 0.5);
+
+  /* Semantic Tint & Surface Tokens */
+  --color-surface-info-light: #e3f2fd;
+  --color-surface-info-lighter: #c9e2fa;
+  --color-surface-info-very-light: #eaf4ff;
+  --color-surface-success-light: #e8f5e9;
+  --color-surface-warning-light: #fff8e1;
+  --color-surface-error-light: #FEF2F2;
+  --color-surface-error-background: #FEF2F2;
+  --color-surface-error-text: #E01F26;
+  
+  /* Grey Tokens */
+  --color-grey-light: #bbb;
+  --color-grey-faint: #fafafa;
+  --color-grey-lighter: #efefef;
+  --color-grey-medium: #dddddd;
+  --color-grey-medium-alt: #999999;
+  --color-grey-darker: #1a1a1a;
+  
+  /* Accent Tokens */
+  --color-info-dark: #1565c0;
+  --color-info: #17a2b8;
+  --color-info-accent: #0b5ead;
+  --color-info-medium: #90caf9;
+  --color-accent-yellow: #ffd54f;
+
+  /* Additional tokens for missing hex values */
+  --color-border-alt: #E0E0E0;
+  --color-border-light-alt: #D9DDE1;
+  --color-accent-orange: #E65100;
+  --color-danger-dark: #C62828;
+  --color-danger-darker: #A61F1F;
+  --color-success-light: #8FC795;
+  --color-surface-error: #FCE4EC;
+  --color-surface-light: #F5F5F5;
 }

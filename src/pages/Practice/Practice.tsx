@@ -1,168 +1,100 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import AppIcon from '@components/AppIcon';
-import AppShell from '../../layouts/AppShell';
 
-type Skill = 'Reading' | 'Listening' | 'Writing' | 'Speaking';
+type Skill = 'Listening' | 'Reading' | 'Speaking' | 'Writing';
 
-const skills = ['All skills', 'Listening', 'Reading', 'Speaking', 'Writing'] as const;
-type SkillFilter = (typeof skills)[number];
+const skills: Skill[] = ['Listening', 'Reading', 'Speaking', 'Writing'];
 
-interface PracticeSession {
-  id: number;
-  type: Skill;
-  title: string;
-  duration: string;
-  difficulty: string;
-  done: boolean;
-  score: number | null;
-}
-
-const sessions: PracticeSession[] = [
-  { id: 1, type: 'Reading', title: 'Email sorting', duration: '12 min', difficulty: 'B2', done: true, score: 82 },
-  { id: 2, type: 'Listening', title: 'Follow Instructions', duration: '10 min', difficulty: 'B2', done: true, score: 68 },
-  { id: 3, type: 'Writing', title: 'Social Media', duration: '25 min', difficulty: 'C1', done: false, score: null },
-  { id: 7, type: 'Writing', title: 'Report Writing', duration: '25 min', difficulty: 'B2', done: false, score: null },
-  { id: 4, type: 'Speaking', title: 'Give advice', duration: '5 min', difficulty: 'B2', done: false, score: null },
-  { id: 8, type: 'Speaking', title: 'Defend a position', duration: '5 min', difficulty: 'C1', done: false, score: null },
-  { id: 9, type: 'Speaking', title: 'Oral presentation', duration: '5 min', difficulty: 'C1', done: false, score: null },
-  { id: 5, type: 'Reading', title: 'Multiple texts', duration: '14 min', difficulty: 'C1', done: false, score: null },
-  { id: 10, type: 'Reading', title: 'Academic reading', duration: '14 min', difficulty: 'C1', done: false, score: null },
-  { id: 6, type: 'Listening', title: 'Announcements', duration: '8 min', difficulty: 'B1', done: true, score: 75 },
-  { id: 11, type: 'Listening', title: 'Conversation', duration: '10 min', difficulty: 'B2', done: false, score: null },
-  { id: 12, type: 'Listening', title: 'Academic listening', duration: '12 min', difficulty: 'C1', done: false, score: null },
-];
-
-const typeColors: Record<Skill, string> = {
-  Reading: '#2e7d32',
-  Listening: '#1565c0',
-  Writing: '#6a1599',
-  Speaking: '#bf360c',
+const skillBgColors: Record<Skill, string> = {
+  Listening: 'bg-surface-info-light',
+  Reading: 'bg-surface-success-light',
+  Speaking: 'bg-surface-warning-light',
+  Writing: 'bg-[#f3e5f5]',
 };
 
-const typeBg: Record<Skill, string> = {
-  Reading: '#e8f5e9',
-  Listening: '#e3f2fd',
-  Writing: '#f3e5f5',
-  Speaking: '#fbe9e7',
+const skillTextColors: Record<Skill, string> = {
+  Listening: 'text-info-dark',
+  Reading: 'text-success',
+  Speaking: 'text-warning',
+  Writing: 'text-[#7b1fa2]',
 };
 
 export default function Practice() {
-  const [activeSkill, setActiveSkill] = useState<SkillFilter>('All skills');
-  const filtered =
-    activeSkill === 'All skills' ? sessions : sessions.filter((s) => s.type === activeSkill);
-
   return (
-    <AppShell
-      title="Practice"
-      subtitle="Build confidence and get test-ready with free practice activities."
-      backTo="/dashboard"
-    >
-      <div className="max-w-[900px] mx-auto pb-12">
-        {/* Full-length practice card */}
-        <div
-          className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-6 bg-[#fff3ea] border border-[#FF6A0030] rounded-[16px] px-7 py-5 mb-6"
-        >
-          <div>
-            <p
-              className="text-[12px] font-bold text-[#FF6A00] uppercase tracking-[0.08em] mb-1.5"
-            >
-              Four Skills Practice Test
-            </p>
-            <h3 className="text-[16px] font-black text-[#232d3f] mb-1">
-              Try a short test
-            </h3>
-            <p className="text-[13px] text-[#55657b]">
-              ~45 minutes · Reading · Listening · Writing · Speaking · An indicative score, for
-              practice only
-            </p>
+    <div className="max-w-[900px] mx-auto pb-12">
+      {/* Coming Soon Card */}
+      <div className="bg-white border border-border-default rounded-[16px] px-7 py-7 mb-8">
+        <div className="flex flex-col md:flex-row md:items-start gap-6">
+          {/* Clock Icon in soft orange tile */}
+          <div className="flex-shrink-0 w-14 h-14 rounded-[12px] bg-brand-primary/10 flex items-center justify-center">
+            <AppIcon name="clock" size={24} className="text-brand-primary" />
           </div>
-          <Link
-            to="/test-prepare"
-            className="px-5.5 py-2.75 rounded-[10px] bg-[#FF6A00] text-white text-[13px] font-bold no-underline whitespace-nowrap text-center md:w-auto w-full"
-          >
-            Coming soon
-          </Link>
-        </div>
 
-        {/* Filter Section */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4 mb-4">
-          <h2 className="text-[16px] font-black text-[#232d3f]">
-            Skills Practice
-          </h2>
-          <div className="flex flex-wrap gap-2 justify-start md:justify-end" role="group" aria-label="Filter by skill">
-            {skills.map((s) => {
-              const isActive = activeSkill === s;
-              return (
-                <button
-                  key={s}
-                  type="button"
-                  aria-pressed={isActive}
-                  onClick={() => setActiveSkill(s)}
-                  className={`px-3.5 py-1.5 rounded-full border-[1.5px] text-[12px] font-bold cursor-pointer transition-all ${
-                    isActive
-                      ? 'border-[#FF6A00] bg-[#fff3ea] text-[#FF6A00]'
-                      : 'border-[#e0e0e0] bg-white text-[#55657b] hover:border-[#FF6A0050]'
-                  }`}
-                >
-                  {s}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+          <div className="flex-1">
+            <h2 className="text-[18px] font-black text-ink mb-2">Practice is coming soon</h2>
+            <p className="text-[14px] text-slate mb-6">
+              Soon you&apos;ll be able to practise each skill and take a short practice test. Until
+              then, learn what to expect on test day.
+            </p>
 
-        {/* Practice Sessions Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-          {filtered.map((s) => (
             <Link
-              key={s.id}
               to="/test-prepare"
-              className="block bg-white border-[1.5px] border-[#e0e0e0] rounded-[14px] px-5 py-[18px] no-underline cursor-pointer transition-all hover:border-[#FF6A0050] hover:shadow-[0_4px_16px_rgba(255,106,0,0.08)]"
+              className="inline-flex items-center justify-center px-5 py-2.5 rounded-[10px] border-[1.5px] border-brand-primary text-brand-primary text-[13px] font-bold no-underline transition-all hover:bg-brand-primary/5"
+            >
+              How the test works
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* What's coming section */}
+      <div>
+        <h2 className="text-[16px] font-black text-ink mb-6">What&apos;s coming</h2>
+
+        {/* Featured test tile */}
+        <div
+          className="border border-solid border-brand-primary/20 bg-[#fff8f1] rounded-[14px] px-6 py-5 mb-6"
+          aria-disabled="true"
+        >
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div className="flex-1">
+              <p className="text-[11px] font-bold text-brand-primary uppercase tracking-[0.08em] mb-2">
+                Four Skills Practice Test
+              </p>
+              <h3 className="text-[16px] font-black text-ink mb-2">Try a short test</h3>
+              <p className="text-[13px] text-slate">
+                ~45 minutes · Reading · Listening · Writing · Speaking · An indicative score, for practice only
+              </p>
+            </div>
+            <div className="flex-shrink-0">
+              <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-brand-primary text-white text-[11px] font-bold uppercase tracking-[0.05em]">
+                Coming soon
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Four skills grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {skills.map((skill) => (
+            <div
+              key={skill}
+              className="border border-dashed border-border-default bg-muted rounded-[14px] px-5 py-4"
+              aria-disabled="true"
             >
               <div className="flex items-start justify-between mb-3">
                 <span
-                  className="text-[11px] font-bold px-2.5 py-0.75 rounded-full"
-                  style={{
-                    backgroundColor: typeBg[s.type],
-                    color: typeColors[s.type],
-                  }}
+                  className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-[0.05em] ${skillBgColors[skill]} ${skillTextColors[skill]}`}
                 >
-                  {s.type}
-                </span>
-                {s.done && s.score !== null && (
-                  <span
-                    className="text-[12px] font-black px-2.5 py-0.75 rounded-full bg-[#fff3ea] text-[#FF6A00]"
-                  >
-                    {Math.round(s.score / 12)}/10
-                  </span>
-                )}
-              </div>
-              <h3
-                className="text-[14px] font-bold text-[#232d3f] mb-2 leading-[1.4]"
-              >
-                {s.title}
-              </h3>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span
-                    className="text-[11px] text-[#55657b] inline-flex items-center gap-1.5"
-                  >
-                    <AppIcon name="clock" size={14} /> {s.duration}
-                  </span>
-                </div>
-                <span
-                  className={`text-[13px] font-bold ${
-                    s.done ? 'text-[#2e7d32]' : 'text-[#FF6A00]'
-                  }`}
-                >
-                  {s.done ? '✓ Done' : 'Start →'}
+                  {skill}
                 </span>
               </div>
-            </Link>
+              <h3 className="text-[13px] font-bold text-ink mb-1">{skill} practice</h3>
+              <p className="text-[12px] text-slate">Short tasks in the real test format</p>
+            </div>
           ))}
         </div>
       </div>
-    </AppShell>
+    </div>
   );
 }
