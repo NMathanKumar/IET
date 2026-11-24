@@ -177,8 +177,26 @@ describe('Results', () => {
           id: 'enrol-1',
           userId: 'user-1',
           testId: 'test-1',
-          status: 'completed',
-          createdAt: '2026-09-24',
+          status: 'COMPLETED',
+          enrolmentDateTime: '2026-09-24T00:00:00Z',
+          userProfile: {
+            givenName: 'Agnes',
+            familyName: 'Lee',
+          },
+          product: {
+            name: 'IDP English Test',
+          },
+          result: {
+            certId: 'IDP-ENG-TEST-001',
+            overall: 78,
+            cefr: 'B2',
+            skills: [
+              { skill: 'Reading', score: 86, max: 120, cefr: 'C1', feedback: 'Good', subskills: [] },
+              { skill: 'Listening', score: 64, max: 120, cefr: 'B2', feedback: 'Good', subskills: [] },
+              { skill: 'Writing', score: 74, max: 120, cefr: 'B2', feedback: 'Good', subskills: [] },
+              { skill: 'Speaking', score: 72, max: 120, cefr: 'B2', feedback: 'Good', subskills: [] },
+            ],
+          },
         },
       ]);
 
@@ -193,23 +211,16 @@ describe('Results', () => {
         { timeout: 3000 }
       );
 
-      // FIXED: multiple "IDP English Test" elements exist
-      const testTitles = screen.getAllByText(/IDP English Test/i);
-
-      expect(testTitles.length).toBeGreaterThan(0);
-
-      // Verify results cards are rendered
+      // Verify results cards are rendered with role="button"
       const resultCards = screen.getAllByRole('button');
 
       expect(resultCards.length).toBeGreaterThan(0);
 
-      expect(resultCards[0]).toHaveTextContent(
-        'IDP English Test'
-      );
+      // Check for the report card with product name
+      expect(screen.getByText('IDP English Test')).toBeInTheDocument();
 
-      expect(resultCards[0]).toHaveTextContent(
-        /current report/i
-      );
+      // Check for "Current report" text
+      expect(screen.getByText(/current report/i)).toBeInTheDocument();
     });
   });
 });

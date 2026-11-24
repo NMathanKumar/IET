@@ -167,9 +167,6 @@ export async function apiRequest<T = unknown>(
 
   // Handle 201/204 No Content - no body to parse
   if (response.status === 204 || response.status === 201) {
-    console.log(`apiRequest: Handling ${response.status} response with potential empty body`);
-    
-    // Try to parse JSON response if it exists
     const contentType = response.headers.get('content-type');
     if (contentType && contentType.includes('application/json')) {
       try {
@@ -184,11 +181,10 @@ export async function apiRequest<T = unknown>(
           };
         }
       } catch (parseErr) {
-        console.log(`apiRequest: Could not parse 201/204 response body, returning undefined`);
+        // Could not parse response body
       }
     }
     
-    // No body or not JSON - return success with undefined data
     return {
       data: undefined,
       status: response.status,

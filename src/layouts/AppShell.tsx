@@ -34,6 +34,7 @@ const TITLES: Record<string, string> = {
   '/check-in/identity': 'Test Check-in',
   '/book': 'Purchase Test',
   '/checkout': 'Checkout',
+  '/purchase/return': 'Payment Status',
   '/settings': 'Settings',
 };
 
@@ -52,6 +53,7 @@ const BACK_LINKS: Record<string, { to: string; text: string }> = {
   '/checkout': { to: '/book', text: '← Back' },
   '/test-prepare': { to: '/practice', text: '← Back to practice' },
   '/check-in/identity': { to: '/check-in/about', text: '← Back to your details' },
+  '/purchase/return': { to: '/dashboard', text: '← Back to Dashboard' },
 };
 
 export default function AppShell() {
