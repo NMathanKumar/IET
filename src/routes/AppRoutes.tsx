@@ -10,6 +10,7 @@ import Dashboard from '../pages/Dashboard/Dashboard';
 import Results from '../pages/Results/Results';
 import PurchaseTest from '../pages/PurchaseTest/PurchaseTest';
 import Checkout from '../pages/Checkout/Checkout';
+import PurchaseReturn from '../pages/PurchaseReturn/PurchaseReturn';
 import Settings from '../pages/Settings/Settings';
 import Practice from '../pages/Practice/Practice';
 import TestPrepare from '../pages/TestPrepare/TestPrepare';
@@ -245,6 +246,7 @@ export function AppRoutes(): React.JSX.Element {
         <Route path="/practice" element={<Practice />} />
         <Route path="/book" element={<PurchaseTest />} />
         <Route path="/checkout" element={<Checkout />} />
+        <Route path="/purchase/return" element={<PurchaseReturn />} />
         <Route path="/test-prepare" element={<TestPrepare />} />
         <Route path="/check-in" element={<Navigate to="/check-in/about" replace />} />
         <Route path="/check-in/about" element={<CheckInAbout />} />

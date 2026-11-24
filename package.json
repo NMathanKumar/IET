@@ -30,6 +30,8 @@
     "destroy:dev": "npm run cdk -- destroy --all -c stage=dev"
   },
   "dependencies": {
+    "@stripe/react-stripe-js": "^7.1.0",
+    "@stripe/stripe-js": "^10.3.0",
     "aws-amplify": "^6.22.2",
     "aws-cdk-lib": "^2.274.0",
     "constructs": "^10.8.1",
@@ -43,8 +45,8 @@
     "@tailwindcss/postcss": "^4.3.5",
     "@testing-library/jest-dom": "^6.1.0",
     "@testing-library/react": "^14.1.0",
-    "@types/node": "^24.19.2",
     "@testing-library/user-event": "^14.6.10",
+    "@types/node": "^24.19.2",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@types/react-router-dom": "^5.3.3",

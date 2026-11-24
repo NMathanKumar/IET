@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { getProducts } from '@services/product';
+import type { Product } from '@types';
 
 const faqs = [
   { q: 'How long is the test?', a: '~80 minutes, uninterrupted. Four skills: Reading, Listening, Writing, and Speaking in one sitting.' },
@@ -18,25 +20,89 @@ const PRACTICE_FEATURES = [
 
 export default function PurchaseTest() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const fetchedProducts = await getProducts();
+        setProducts(fetchedProducts);
+      } catch (err) {
+        console.error('Failed to fetch products:', err);
+        setError('Failed to load products. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  // Filter only active products
+  const activeProducts = products.filter((p: Product) => p.status === 'ACTIVE');
+
+  // Use first active product for pricing display (error if no products)
+  const displayProduct = activeProducts[0];
+
+  if (loading) {
+    return (
+      <div className="max-w-[900px] mx-auto pb-12">
+        <p className="text-slate text-center py-8">Loading products...</p>
+      </div>
+    );
+  }
+
+  if (!displayProduct) {
+    return (
+      <div className="max-w-[900px] mx-auto pb-12">
+        <p className="text-slate text-center py-8">No products available.</p>
+      </div>
+    );
+  }
+
+  // Get the fee for Australia (or first available fee)
+  const ausFee = displayProduct.fees.find((f: { country: string }) => f.country === 'AUS') || displayProduct.fees[0];
+  const price = ausFee?.basePrice ?? 89;
+  const currency = ausFee?.currency ?? 'AUD';
+
+  // Handle purchase button click - store product in navigation state
+  const handlePurchaseClick = () => {
+    console.log('🎯 [PurchaseTest] Navigating to checkout with product:', displayProduct.id);
+  };
 
   return (
     <>
       <div className="max-w-[900px] mx-auto pb-12">
+        {/* Error State */}
+        {error && (
+          <div className="text-red-500 text-center py-4">
+            {error}
+          </div>
+        )}
+
         {/* Hero Pricing Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-7">
           {/* Test Card */}
           <div className="bg-surface-brand rounded-[16px] px-8 py-7 text-ink border border-accent-yellow shadow-[0_4px_16px_rgba(0,0,0,0.08)] flex flex-col">
             <p className="text-[11px] font-bold text-ink uppercase tracking-[0.1em] mb-3">
-              IDP English Test
+              {displayProduct.name}
             </p>
             <div className="flex items-end gap-2 mb-1">
               <span className="text-[48px] font-black leading-[1] text-brand-primary">
-                $89
+                ${price}
               </span>
               <span className="text-[16px] text-slate pb-1.5">
-                AUD
+                {currency}
               </span>
             </div>
+            {displayProduct.description && (
+              <p className="text-[13px] text-slate mb-6 leading-[1.6]">
+                {displayProduct.description}
+              </p>
+            )}
             <div className="flex flex-col gap-2 mb-6 flex-1">
               {TEST_FEATURES.map((f) => (
                 <div
@@ -50,7 +116,9 @@ export default function PurchaseTest() {
             </div>
             <Link
               to="/checkout"
+              state={{ product: displayProduct }}
               className="block text-center w-full py-3 rounded-[10px] border-none bg-brand-primary text-white text-[14px] font-black no-underline hover:opacity-90 transition-opacity"
+              onClick={handlePurchaseClick}
             >
               Purchase Test →
             </Link>

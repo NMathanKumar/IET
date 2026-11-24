@@ -1,8 +1,7 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@hooks/useAuth';
 import { useEffect, useState } from 'react';
-import { isCheckInComplete } from '@utils/checkIn';
-import { markGuideSeen, hasSeenGuide } from '@utils/onboarding';
+import { hasSeenGuide, markGuideSeen } from '@utils/onboarding';
 import { EnrolmentService } from '@services';
 import type { TestTakerResponse, Enrolment } from '@services/enrolment';
 import AppIcon, { type AppIconName } from '@components/AppIcon';
@@ -18,15 +17,11 @@ const NEXT_STEPS: { icon: AppIconName; label: string; sub: string; to: string }[
 export default function Dashboard() {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  const completionState = (location.state as { checkInComplete?: boolean } | null)
-    ?.checkInComplete;
-  const [checkInComplete] = useState(() => Boolean(completionState) || isCheckInComplete());
   const [profile, setProfile] = useState<TestTakerResponse | null>(null);
   const [enrolments, setEnrolments] = useState<Enrolment[]>([]);
   const [_profileLoading, _setProfileLoading] = useState(false);
   const [_profileError, _setProfileError] = useState<string | null>(null);
-  const [_enrolmentsLoading, _setEnrolmentsLoading] = useState(false);
+  const [enrolmentsLoading, setEnrolmentsLoading] = useState(true);
   const [_enrolmentsError, _setEnrolmentsError] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingLoading, setOnboardingLoading] = useState(true);
@@ -48,14 +43,8 @@ export default function Dashboard() {
 
       try {
         const testTakerProfile = await EnrolmentService.getTestTaker();
-
-        if (testTakerProfile) {
-          setProfile(testTakerProfile);
-        } else {
-          setProfile(null);
-        }
+        setProfile(testTakerProfile || null);
       } catch (error) {
-        console.error('Dashboard: Failed to load test taker profile:', error);
         _setProfileError(error instanceof Error ? error.message : 'Failed to load profile');
       } finally {
         _setProfileLoading(false);
@@ -72,7 +61,7 @@ export default function Dashboard() {
         return;
       }
 
-      _setEnrolmentsLoading(true);
+      setEnrolmentsLoading(true);
       _setEnrolmentsError(null);
 
       try {
@@ -80,11 +69,10 @@ export default function Dashboard() {
         setEnrolments(data || []);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Failed to load enrolments';
-        console.error('Dashboard: Failed to load enrolments:', error);
         _setEnrolmentsError(errorMessage);
         setEnrolments([]);
       } finally {
-        _setEnrolmentsLoading(false);
+        setEnrolmentsLoading(false);
       }
     };
 
@@ -103,7 +91,6 @@ export default function Dashboard() {
         const seen = await hasSeenGuide();
         setShowOnboarding(!seen);
       } catch (error) {
-        console.error('Dashboard: Failed to check guide status:', error);
         setShowOnboarding(true);
       } finally {
         setOnboardingLoading(false);
@@ -118,6 +105,53 @@ export default function Dashboard() {
   // Don't render if no user (will redirect via effect)
   if (!user) {
     return null;
+  }
+
+  // Show loading skeleton while enrolments are being fetched
+  if (enrolmentsLoading) {
+    return (
+      <div className="max-w-[900px] mx-auto pb-12">
+        {/* Welcome Section Skeleton */}
+        <div className="mb-8">
+          <div className="h-8 bg-surface-light rounded-lg mb-2 w-48"></div>
+          <div className="h-4 bg-surface-light rounded-lg w-96"></div>
+        </div>
+
+        {/* Enrolments Skeleton */}
+        <div className="flex flex-col gap-3 mb-5">
+          {[1, 2].map((i) => (
+            <div
+              key={i}
+              className="bg-white rounded-2xl border-2 border-border-alt p-5 md:p-7 flex items-start md:items-center gap-4 md:gap-6"
+            >
+              <div className="w-11 h-11 rounded-xl bg-surface-light flex-shrink-0"></div>
+              <div className="flex-1 w-full">
+                <div className="h-5 bg-surface-light rounded-lg mb-2 w-40"></div>
+                <div className="h-4 bg-surface-light rounded-lg mb-2 w-32"></div>
+                <div className="h-3 bg-surface-light rounded-lg w-56"></div>
+              </div>
+              <div className="h-10 bg-surface-light rounded-2xl w-24 flex-shrink-0"></div>
+            </div>
+          ))}
+        </div>
+
+        {/* What's Next Skeleton */}
+        <div className="bg-white rounded-2xl px-7 py-6 border border-border-default">
+          <div className="h-5 bg-surface-light rounded-lg mb-4 w-32"></div>
+          <div className="flex flex-col gap-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center gap-3 p-3.5">
+                <div className="w-8.5 h-8.5 rounded-lg bg-surface-light flex-shrink-0"></div>
+                <div className="flex-1">
+                  <div className="h-4 bg-surface-light rounded-lg mb-1 w-40"></div>
+                  <div className="h-3 bg-surface-light rounded-lg w-56"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   // Determine if user is new (no enrolments)
@@ -232,7 +266,7 @@ export default function Dashboard() {
             </div>
           </div>
         ) : (
-          // EXISTING USER DASHBOARD
+          // EXISTING USER DASHBOARD - Map real enrolments
           <div className="max-w-[900px] mx-auto pb-12">
             {/* Welcome Section */}
             <div className="mb-8">
@@ -244,112 +278,138 @@ export default function Dashboard() {
               </p>
             </div>
 
-            {/* Purchased Tests Section */}
+            {/* Purchased Tests Section - Render real enrolments */}
             <div className="flex flex-col gap-3 mb-5">
-              {/* State 1: Not taken, window open */}
-              <div className="bg-white rounded-2xl border-2 border-brand-primary/19 p-5 md:p-7 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-6">
-                <div className="flex items-start gap-4 flex-1 w-full">
-                  <div className="w-11 h-11 rounded-xl bg-surface-brand border border-brand-primary/19 flex items-center justify-center flex-shrink-0 text-ink">
-                    <AppIcon name="ticket" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-0.5">
-                      <span className="text-[15px] font-black text-ink">IDP English Test</span>
-                      <span className="text-[10px] font-bold px-2 rounded-full bg-surface-warning-light text-warning border border-accent-yellow w-fit">
-                        TEST NOT TAKEN
-                      </span>
-                    </div>
-                    <p className="text-[12px] text-slate mb-1.5">Purchased Sep 24, 2026 · ONE TIME TEST · UP TO 80 MINS</p>
-                    <span className="inline-flex items-center gap-1.25 text-[11px] font-semibold text-brand-primary bg-surface-brand border border-brand-primary/25 px-2.5 py-0.75 rounded-full">
-                      <AppIcon name="award" size={14} /> Take within 21 days of enrolment · 17 days
-                      left (by Oct 15, 2026)
-                    </span>
-                    <div className={`flex flex-col sm:flex-row sm:items-center gap-1.5 w-fit mt-2 px-2.25 py-1.5 rounded-lg border ${
-                      checkInComplete
-                        ? 'bg-surface-success-light text-success border-success'
-                        : 'bg-surface-info-very-light text-info-accent border-info-medium'
-                    }`}>
-                      <AppIcon name={checkInComplete ? 'identification' : 'user'} size={15} />
-                      <span className="text-[11px] font-bold">
-                        {checkInComplete
-                          ? 'Check-in completed — you can now start your test.'
-                          : 'Check-in is required before you can start this test.'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                {checkInComplete ? (
-                  <Link
-                    className="w-full sm:w-auto px-6 py-2.5 rounded-2xl bg-brand-primary text-white text-[13px] font-black no-underline whitespace-nowrap flex-shrink-0 text-center"
-                    to="/test-prepare"
-                  >
-                    Start test →
-                  </Link>
-                ) : (
-                  <Link
-                    className="w-full sm:w-auto px-6 py-2.5 rounded-2xl bg-brand-primary text-white text-[13px] font-black no-underline whitespace-nowrap flex-shrink-0 text-center"
-                    to="/check-in/about"
-                  >
-                    Check-in →
-                  </Link>
-                )}
-              </div>
+              {enrolments.map((enrolment) => {
+                // Calculate window status based on enrolment date
+                const enrolmentDate = new Date(enrolment.enrolmentDateTime);
+                const windowOpenDate = new Date(enrolmentDate);
+                windowOpenDate.setDate(enrolmentDate.getDate() + 1); // Window opens day after purchase
+                const windowCloseDate = new Date(enrolmentDate);
+                windowCloseDate.setDate(enrolmentDate.getDate() + 21); // Window closes 21 days after purchase
+                const today = new Date();
+                const daysLeft = Math.ceil((windowCloseDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                const isWindowOpen = today >= windowOpenDate && today <= windowCloseDate;
+                const isPaymentPending = enrolment.payment?.status === 'PENDING';
+                const isCheckInComplete = enrolment.status === 'CONFIRMED';
+                const testStarted = enrolment.status === 'COMPLETED';
+                const hasResult = (enrolment as any).result;
 
-              {/* State 2: Not taken, window closed */}
-              <div className="bg-white rounded-2xl border-2 border-border-alt p-5 md:p-7 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-6">
-                <div className="flex items-start gap-4 flex-1 w-full">
-                  <div className="w-11 h-11 rounded-xl bg-surface-light border border-border-alt flex items-center justify-center flex-shrink-0 text-ink">
-                    <AppIcon name="ticket" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-0.5">
-                      <span className="text-[15px] font-black text-ink">IDP English Test</span>
-                      <span className="text-[10px] font-bold px-2 rounded-full bg-surface-warning-light text-warning border border-accent-yellow w-fit">
-                        TEST NOT TAKEN
-                      </span>
-                    </div>
-                    <p className="text-[12px] text-slate mb-1.5">Purchased 5 Aug 2026 · ONE TIME TEST · UP TO 80 MINS</p>
-                    <span className="inline-flex flex-wrap items-center gap-1.25 text-[11px] font-semibold text-grey-darker bg-surface-error-light border border-surface-error-light px-2.5 py-0.75 rounded-full w-fit">
-                      <AppIcon name="clock" size={14} /> Test window closed — was due by Aug 26, 2026
-                    </span>
-                  </div>
-                </div>
-                <button
-                  className="w-full sm:w-auto px-6 py-2.5 rounded-2xl bg-brand-primary text-white text-[13px] font-black no-underline whitespace-nowrap flex-shrink-0 text-center opacity-40 cursor-not-allowed disabled:opacity-40 disabled:cursor-not-allowed"
-                  disabled
-                >
-                  Start test →
-                </button>
-              </div>
+                return (
+                  <div
+                    key={enrolment.id}
+                    className={`bg-white rounded-2xl border-2 p-5 md:p-7 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-6 ${
+                      isPaymentPending
+                        ? 'border-border-alt opacity-75'
+                        : isWindowOpen
+                          ? 'border-brand-primary/19'
+                          : 'border-border-alt opacity-75'
+                    }`}
+                  >
+                    <div className="flex items-start gap-4 flex-1 w-full">
+                      <div className={`w-11 h-11 rounded-xl border flex items-center justify-center flex-shrink-0 text-ink ${
+                        isPaymentPending || !isWindowOpen
+                          ? 'bg-surface-light border-border-alt'
+                          : 'bg-surface-brand border-brand-primary/19'
+                      }`}>
+                        <AppIcon name="ticket" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-0.5">
+                          <span className="text-[15px] font-black text-ink">
+                            {enrolment.product?.name || 'IDP English Test'}
+                          </span>
+                          <span className={`text-[10px] font-bold px-2 rounded-full w-fit border ${
+                            isPaymentPending
+                              ? 'bg-surface-warning-light text-warning border-accent-yellow'
+                              : hasResult
+                                ? 'bg-surface-success-light text-success border-success'
+                                : testStarted
+                                  ? 'bg-surface-info-light text-info-dark border-info-medium'
+                                  : 'bg-surface-warning-light text-warning border-accent-yellow'
+                          }`}>
+                            {isPaymentPending
+                              ? 'PAYMENT PENDING'
+                              : hasResult
+                                ? 'RESULTS READY'
+                                : testStarted
+                                  ? 'TEST COMPLETED'
+                                  : 'TEST NOT STARTED'}
+                          </span>
+                        </div>
+                        <p className="text-[12px] text-slate mb-1.5">
+                          Purchased {new Date(enrolment.enrolmentDateTime).toLocaleDateString()} · ONE TIME TEST · UP TO 80 MINS
+                        </p>
+                        
+                        {isPaymentPending && (
+                          <span className="inline-flex items-center gap-1.25 text-[11px] font-semibold text-warning bg-surface-warning-light border border-accent-yellow px-2.5 py-0.75 rounded-full">
+                            <AppIcon name="clock" size={14} /> Complete payment to activate your test
+                          </span>
+                        )}
+                        
+                        {!isPaymentPending && isWindowOpen && (
+                          <>
+                            <span className="inline-flex items-center gap-1.25 text-[11px] font-semibold text-brand-primary bg-surface-brand border border-brand-primary/25 px-2.5 py-0.75 rounded-full mb-2">
+                              <AppIcon name="award" size={14} /> {daysLeft} days left (by {new Date(enrolment.testWindow?.closesOn || '').toLocaleDateString()})
+                            </span>
+                            <div className={`flex flex-col sm:flex-row sm:items-center gap-1.5 w-fit mt-2 px-2.25 py-1.5 rounded-lg border ${
+                              isCheckInComplete
+                                ? 'bg-surface-success-light text-success border-success'
+                                : 'bg-surface-info-very-light text-info-accent border-info-medium'
+                            }`}>
+                              <AppIcon name={isCheckInComplete ? 'identification' : 'user'} size={15} />
+                              <span className="text-[11px] font-bold">
+                                {isCheckInComplete
+                                  ? 'Check-in completed — you can now start your test.'
+                                  : 'Check-in is required before you can start this test.'}
+                              </span>
+                            </div>
+                          </>
+                        )}
+                        
 
-              {/* State 3: Enrolment in progress */}
-              <div className="bg-white rounded-2xl border-2 border-border-alt p-5 md:p-7 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-6">
-                <div className="flex items-start gap-4 flex-1 w-full">
-                  <div className="w-11 h-11 rounded-xl bg-surface-light border border-border-alt flex items-center justify-center flex-shrink-0 text-ink">
-                    <AppIcon name="ticket" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-0.5">
-                      <span className="text-[15px] font-black text-ink">IDP English Test</span>
-                      <span className="text-[10px] font-bold px-2 rounded-full bg-surface-info-light text-info-dark border border-info-medium w-fit">
-                        ENROLMENT IN PROGRESS
-                      </span>
+
+                        {hasResult && (
+                          <div className="mt-2 text-[12px] font-bold text-success">
+                            Overall Score: {(enrolment as any).result.overall}/120 ({(enrolment as any).result.cefr})
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <p className="text-[12px] text-slate">
-                      Purchased 4 Aug 2026 · ONE TIME TEST · UP TO 80 MINS
-                    </p>
+                    
+                    {isPaymentPending ? (
+                      <Link
+                        to="/book"
+                        className="inline-flex items-center justify-center w-full sm:w-auto px-6 py-2.5 rounded-2xl bg-brand-primary text-white text-[13px] font-bold no-underline whitespace-nowrap transition-colors hover:bg-brand-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        Make payment →
+                      </Link>
+                    ) : testStarted ? (
+                      <Link
+                        to="/results"
+                        className="inline-flex items-center justify-center w-full sm:w-auto px-6 py-2.5 rounded-2xl bg-brand-primary text-white text-[13px] font-bold no-underline whitespace-nowrap transition-colors hover:bg-brand-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        View results →
+                      </Link>
+                    ) : isCheckInComplete ? (
+                      <Link
+                        to="/check-in/start"
+                        className="inline-flex items-center justify-center w-full sm:w-auto px-6 py-2.5 rounded-2xl bg-brand-primary text-white text-[13px] font-bold no-underline whitespace-nowrap transition-colors hover:bg-brand-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        Start test →
+                      </Link>
+                    ) : (
+                      <Link
+                        to="/check-in/about"
+                        className="inline-flex items-center justify-center w-full sm:w-auto px-6 py-2.5 rounded-2xl bg-brand-primary text-white text-[13px] font-bold no-underline whitespace-nowrap transition-colors hover:bg-brand-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        Check-in →
+                      </Link>
+                    )}
                   </div>
-                </div>
-                <Link
-                  className="w-full sm:w-auto px-6 py-2.5 rounded-2xl bg-brand-primary text-white text-[13px] font-black no-underline whitespace-nowrap flex-shrink-0 text-center"
-                  to="/book"
-                >
-                  Make payment →
-                </Link>
-              </div>
+                );
+              })}
             </div>
-
-
 
             {/* What's Next Section */}
             <div className="bg-white rounded-2xl px-7 py-6 border border-border-default">
