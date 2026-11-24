@@ -18,13 +18,8 @@ import { CreateTestTakerRequest, UpdateTestTakerRequest, TestTakerResponse, Enro
  * @throws ApiError if not authenticated (401) or request fails
  */
 export async function getTestTaker(): Promise<TestTakerResponse | null> {
-  try {
-    const response = await apiRequest<TestTakerResponse>('/test-takers/v1/me', 'GET');
-    return response.data || null;
-  } catch (error) {
-    console.error('getTestTaker: Failed to fetch test taker profile:', error);
-    throw error;
-  }
+  const response = await apiRequest<TestTakerResponse>('/test-takers/v1/me', 'GET');
+  return response.data || null;
 }
 
 /**
@@ -42,25 +37,8 @@ export async function getTestTaker(): Promise<TestTakerResponse | null> {
 export async function createTestTaker(
   data: CreateTestTakerRequest
 ): Promise<TestTakerResponse | null> {
-  try {
-    console.log('📤 [createTestTaker] Starting POST request');
-    console.log('[createTestTaker] URL: POST /test-takers/v1/me');
-    console.log('[createTestTaker] Payload:', JSON.stringify(data, null, 2));
-
-    const response = await apiRequest<TestTakerResponse>('/test-takers/v1/me', 'POST', data);
-
-    console.log('✅ [createTestTaker] POST succeeded');
-    console.log('[createTestTaker] Response status:', (response as any).status);
-    console.log('[createTestTaker] Response body:', JSON.stringify(response.data, null, 2));
-    
-    return response.data || null;
-  } catch (error) {
-    console.error('❌ [createTestTaker] POST failed');
-    console.error('[createTestTaker] Error status:', (error as any)?.status);
-    console.error('[createTestTaker] Error message:', (error as any)?.message);
-    console.error('[createTestTaker] Full error:', error);
-    throw error;
-  }
+  const response = await apiRequest<TestTakerResponse>('/test-takers/v1/me', 'POST', data);
+  return response.data || null;
 }
 
 /**
@@ -77,17 +55,8 @@ export async function createTestTaker(
 export async function updateTestTaker(
   data: UpdateTestTakerRequest
 ): Promise<TestTakerResponse | null> {
-  try {
-    console.log('updateTestTaker: Updating profile in Enrolment Service');
-
-    const response = await apiRequest<TestTakerResponse>('/test-takers/v1/me', 'PUT', data);
-
-    console.log('updateTestTaker: Profile updated successfully');
-    return response.data || null;
-  } catch (error) {
-    console.error('updateTestTaker: Failed to update test taker profile:', error);
-    throw error;
-  }
+  const response = await apiRequest<TestTakerResponse>('/test-takers/v1/me', 'PUT', data);
+  return response.data || null;
 }
 
 /**
@@ -100,16 +69,7 @@ export async function updateTestTaker(
  * @throws ApiError if not authenticated (401) or request fails
  */
 export async function deleteTestTaker(): Promise<void> {
-  try {
-    console.log('deleteTestTaker: Deleting profile from Enrolment Service');
-
-    await apiRequest<void>('/test-takers/v1/me', 'DELETE');
-
-    console.log('deleteTestTaker: Profile deleted successfully');
-  } catch (error) {
-    console.error('deleteTestTaker: Failed to delete test taker profile:', error);
-    throw error;
-  }
+  await apiRequest<void>('/test-takers/v1/me', 'DELETE');
 }
 
 /**
@@ -123,17 +83,6 @@ export async function deleteTestTaker(): Promise<void> {
  * @throws ApiError if not authenticated (401) or request fails
  */
 export async function getEnrolments(): Promise<Enrolment[]> {
-  try {
-    console.log('getEnrolments: Fetching test taker enrolments');
-
-    const response = await apiRequest<Enrolment[]>('/test-takers/v1/me/enrolments', 'GET');
-
-    const enrolments = response.data || [];
-    console.log(`getEnrolments: Retrieved ${enrolments.length} enrolment(s)`);
-
-    return enrolments;
-  } catch (error) {
-    console.error('getEnrolments: Failed to fetch enrolments:', error);
-    throw error;
-  }
+  const response = await apiRequest<Enrolment[]>('/test-takers/v1/me/enrolments', 'GET');
+  return response.data || [];
 }

@@ -30,57 +30,6 @@ type Report = {
   };
 };
 
-const CANCELLED_FEEDBACK = 'This test was cancelled. No results are available.';
-
-const reports: Report[] = [
-  {
-    name: 'Agnes Lee',
-    date: 'Sep 24, 2026',
-    certId: 'IDP-ENG-7K2M-9X4P',
-    overall: 78,
-    cefr: 'B2',
-    skills: [
-      { skill: 'Reading', score: 86, max: 120, cefr: 'C1', feedback: 'Excellent comprehension and inference skills. You consistently identified main ideas and implicit meaning. Your ability to interpret complex academic texts places you firmly at C1 level, with particular strength in understanding authorial intent and nuanced vocabulary.', subskills: [{ name: 'Main idea', score: 92 }, { name: 'Detail recognition', score: 88 }, { name: 'Vocabulary in context', score: 80 }, { name: 'Inference', score: 85 }] },
-      { skill: 'Listening', score: 64, max: 120, cefr: 'B2', feedback: 'Good understanding of general content. Work on picking up specific details and discourse markers in faster speech. Practising with authentic audio — lectures, podcasts, and interviews — will help you build tolerance for varied accents and natural speech patterns.', subskills: [{ name: 'Gist understanding', score: 72 }, { name: 'Specific detail', score: 58 }, { name: 'Speaker attitude', score: 64 }, { name: 'Cohesion', score: 60 }] },
-      { skill: 'Writing', score: 74, max: 120, cefr: 'B2', feedback: 'Clear task achievement with good range of vocabulary. Focus on grammatical accuracy and complex sentence structures. To move to C1, aim to vary your paragraph structure, use more precise academic vocabulary, and reduce reliance on simple connectives.', subskills: [{ name: 'Task achievement', score: 80 }, { name: 'Coherence', score: 76 }, { name: 'Lexical range', score: 72 }, { name: 'Grammar', score: 68 }] },
-      { skill: 'Speaking', score: 72, max: 120, cefr: 'B2', feedback: 'Fluent with some hesitation. Expand your use of complex vocabulary and longer, more structured responses. Recording yourself and reviewing your responses will help identify filler words and areas where extending your answers with examples would strengthen your score.', subskills: [{ name: 'Fluency', score: 70 }, { name: 'Pronunciation', score: 78 }, { name: 'Lexical range', score: 68 }, { name: 'Coherence', score: 74 }] },
-    ],
-  },
-  {
-    name: 'Agnes Lee',
-    date: 'Aug 5, 2026',
-    certId: 'IDP-ENG-3PQ2-5R8W',
-    overall: 70,
-    cefr: 'B1',
-    scoreChanges: {
-      updatedOn: '28 Aug, 2026',
-      overall: { from: 68, to: 70 },
-      skills: [{ skill: 'Listening', from: 58, to: 62 }],
-    },
-    skills: [
-      { skill: 'Reading', score: 74, max: 120, cefr: 'B2', feedback: 'Good comprehension of main ideas and supporting details. You showed solid understanding of text structure, though inference questions proved more challenging. Practising longer academic passages will help consolidate your reading speed and accuracy.', subskills: [{ name: 'Main idea', score: 80 }, { name: 'Detail recognition', score: 76 }, { name: 'Vocabulary in context', score: 70 }, { name: 'Inference', score: 68 }] },
-      { skill: 'Listening', score: 62, max: 120, cefr: 'B2', feedback: 'You followed straightforward dialogues well but struggled with longer, faster recordings. Focus on listening to a wider variety of spoken English — news, lectures, and podcasts — to improve your ability to track complex arguments across extended listening tasks.', subskills: [{ name: 'Gist understanding', score: 66 }, { name: 'Specific detail', score: 52 }, { name: 'Speaker attitude', score: 58 }, { name: 'Cohesion', score: 54 }] },
-      { skill: 'Writing', score: 66, max: 120, cefr: 'B1', feedback: 'Your writing communicated the key message clearly, though sentence structures were sometimes repetitive. Developing a wider range of linking expressions and practising paragraph organisation will help you move to a B2 writing level.', subskills: [{ name: 'Task achievement', score: 72 }, { name: 'Coherence', score: 68 }, { name: 'Lexical range', score: 62 }, { name: 'Grammar', score: 60 }] },
-      { skill: 'Speaking', score: 62, max: 120, cefr: 'B1', feedback: 'You communicated your ideas adequately with reasonable fluency. Longer pauses and some repetition limited your score. Try shadowing native speakers and practising extended responses to build both fluency and the use of more varied vocabulary.', subskills: [{ name: 'Fluency', score: 60 }, { name: 'Pronunciation', score: 68 }, { name: 'Lexical range', score: 58 }, { name: 'Coherence', score: 64 }] },
-    ],
-  },
-  {
-    name: 'Agnes Lee',
-    date: 'Jun 12, 2026',
-    certId: '—',
-    overall: 0,
-    cefr: '—',
-    cancelled: true,
-    cancelReason: 'Malpractice detected',
-    skills: [
-      { skill: 'Reading', score: 0, max: 120, cefr: '—', feedback: CANCELLED_FEEDBACK, subskills: [] },
-      { skill: 'Listening', score: 0, max: 120, cefr: '—', feedback: CANCELLED_FEEDBACK, subskills: [] },
-      { skill: 'Writing', score: 0, max: 120, cefr: '—', feedback: CANCELLED_FEEDBACK, subskills: [] },
-      { skill: 'Speaking', score: 0, max: 120, cefr: '—', feedback: CANCELLED_FEEDBACK, subskills: [] },
-    ],
-  },
-];
-
 const CEFR_DESC: Record<string, string> = {
   A1: 'Beginner',
   A2: 'Elementary',
@@ -190,6 +139,28 @@ export default function Results() {
     loadEnrolments();
   }, []);
 
+  // Transform real enrolments to Report format
+  const transformedReports: Report[] = enrolments
+    .filter(e => e.status === 'COMPLETED' && (e as any).result)
+    .map(e => {
+      const result = (e as any).result;
+      return {
+        name: `${e.userProfile?.givenName} ${e.userProfile?.familyName}`.trim(),
+        date: new Date(e.enrolmentDateTime).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+        }),
+        certId: result.certId || '—',
+        overall: result.overall || 0,
+        cefr: result.cefr || '—',
+        skills: result.skills || [],
+        cancelled: result.cancelled || false,
+        cancelReason: result.cancelReason,
+        scoreChanges: result.scoreChanges,
+      };
+    });
+
   // Show loading state
   if (isLoading) {
     return (
@@ -201,8 +172,8 @@ export default function Results() {
     );
   }
 
-  const hasResults = enrolments.length > 0;
-  const report = hasResults ? reports[activeReport] : null;
+  const hasResults = transformedReports.length > 0;
+  const report = hasResults ? transformedReports[activeReport] : null;
   const skillData = report?.skills || [];
   const sortedSkills = skillData
     .map((entry, index) => ({ entry, index }))
@@ -259,7 +230,7 @@ export default function Results() {
           <>
             <div className="mb-7">
               <div className="flex flex-col gap-2.5">
-                {reports.map((r, i) => {
+                {transformedReports.map((r, i) => {
                   const isActive = i === activeReport;
                   return (
                     <div
@@ -299,7 +270,7 @@ export default function Results() {
                         <div>
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-[15px] font-black text-[#232d3f]">
-                              IDP English Test
+                              {enrolments[i]?.product?.name || 'IDP English Test'}
                             </span>
                             {r.cancelled ? (
                               <span className="text-[11px] font-black px-2.25 py-0.75 rounded-full bg-[#fce4ec] text-[#a61f1f] border border-[#e58d8d]">

@@ -139,7 +139,16 @@ describe('Dashboard', () => {
     });
 
     mocks.mockGetEnrolments.mockResolvedValue([
-      { testId: 'test123' },
+      { 
+        id: 'test123',
+        testId: 'test123',
+        product: { name: 'IDP English Test' },
+        status: 'CONFIRMED',
+        enrolmentDateTime: new Date().toISOString(),
+        testWindow: {
+          closesOn: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        },
+      },
     ]);
 
     renderPage();
@@ -158,7 +167,16 @@ describe('Dashboard', () => {
     };
 
     mocks.mockGetEnrolments.mockResolvedValue([
-      { testId: 'test123' },
+      {
+        id: 'test123',
+        testId: 'test123',
+        product: { name: 'IDP English Test' },
+        status: 'CONFIRMED',
+        enrolmentDateTime: new Date().toISOString(),
+        testWindow: {
+          closesOn: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        },
+      },
     ]);
 
     renderPage();
@@ -185,8 +203,18 @@ describe('Dashboard', () => {
       isLoading: false,
     };
 
+    // Mock enrolment with pending check-in (status not CONFIRMED)
     mocks.mockGetEnrolments.mockResolvedValue([
-      { testId: 'test123' },
+      {
+        id: 'test123',
+        testId: 'test123',
+        product: { name: 'IDP English Test' },
+        status: 'ENROLLED', // Not CONFIRMED means check-in is incomplete
+        enrolmentDateTime: new Date().toISOString(),
+        testWindow: {
+          closesOn: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        },
+      },
     ]);
 
     vi.mocked(isCheckInComplete).mockReturnValue(false);
@@ -204,12 +232,19 @@ describe('Dashboard', () => {
       isLoading: false,
     };
 
+    // Mock enrolment with completed check-in (status is CONFIRMED)
     mocks.mockGetEnrolments.mockResolvedValue([
-      { testId: 'test123' },
+      {
+        id: 'test123',
+        testId: 'test123',
+        product: { name: 'IDP English Test' },
+        status: 'CONFIRMED', // Check-in complete
+        enrolmentDateTime: new Date().toISOString(),
+        testWindow: {
+          closesOn: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        },
+      },
     ]);
-
-    // Important: simulate completed check-in
-    vi.mocked(isCheckInComplete).mockReturnValue(true);
 
     renderPage();
 
@@ -224,8 +259,24 @@ describe('Dashboard', () => {
       isLoading: false,
     };
 
+    // Mock enrolment with completed test and results
     mocks.mockGetEnrolments.mockResolvedValue([
-      { testId: 'test123' },
+      {
+        id: 'test123',
+        testId: 'test123',
+        product: { name: 'IDP English Test' },
+        status: 'COMPLETED',
+        enrolmentDateTime: new Date().toISOString(),
+        testWindow: {
+          closesOn: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        },
+        result: {
+          certId: 'CERT-123',
+          overall: 78,
+          cefr: 'B2',
+          skills: [],
+        },
+      },
     ]);
 
     renderPage();
@@ -248,8 +299,24 @@ describe('Dashboard', () => {
       isLoading: false,
     };
 
+    // Mock enrolment with completed test
     mocks.mockGetEnrolments.mockResolvedValue([
-      { testId: 'test123' },
+      {
+        id: 'test123',
+        testId: 'test123',
+        product: { name: 'IDP English Test' },
+        status: 'COMPLETED',
+        enrolmentDateTime: new Date().toISOString(),
+        testWindow: {
+          closesOn: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        },
+        result: {
+          certId: 'CERT-123',
+          overall: 78,
+          cefr: 'B2',
+          skills: [],
+        },
+      },
     ]);
 
     renderPage();
@@ -274,7 +341,16 @@ describe('Dashboard', () => {
     };
 
     mocks.mockGetEnrolments.mockResolvedValue([
-      { testId: 'test123' },
+      {
+        id: 'test123',
+        testId: 'test123',
+        product: { name: 'IDP English Test' },
+        status: 'CONFIRMED',
+        enrolmentDateTime: new Date().toISOString(),
+        testWindow: {
+          closesOn: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        },
+      },
     ]);
 
     renderPage();

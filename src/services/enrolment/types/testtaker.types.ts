@@ -88,30 +88,37 @@ export interface CreateTestTakerRequest {
 export type UpdateTestTakerRequest = CreateTestTakerRequest;
 
 /**
+ * Test Taker Preferences
+ * User settings stored with the profile
+ */
+export interface Preferences {
+  /** Whether user has seen the first-login guide */
+  hasSeenGuide?: boolean;
+}
+
+/**
  * Test Taker Response
  * GET /test-takers/v1/me
  *
  * Retrieves the current test taker's profile information.
+ * Matches the UserProfile schema from OpenAPI contract.
  *
- * NOTE: OpenAPI spec does not define response schema for 200 responses.
- * Based on endpoint design patterns, response likely includes the same fields
- * submitted in POST/PUT requests. Additional fields may be returned by backend.
- *
- * Minimum guaranteed fields from POST/PUT request:
+ * Fields returned:
  * - givenName (1-256 chars)
  * - familyName (1-256 chars)
  * - dateOfBirth (YYYY-MM-DD)
- * - gender (enum)
- * - hasSeenGuide (boolean, optional)
+ * - gender (enum, optional)
+ * - preferences (object with hasSeenGuide and other settings)
+ * - email, id, sub, agreements, status, etc. (from backend)
  */
 export interface TestTakerResponse {
   givenName?: string;
   familyName?: string;
   dateOfBirth?: string;
   gender?: Gender;
-  /** Whether user has seen the first-login guide */
-  hasSeenGuide?: boolean;
-  // Additional fields may be present in response — backend to confirm
+  /** User preferences including hasSeenGuide flag */
+  preferences?: Preferences;
+  // Additional fields may be present in response (id, sub, email, agreements, status, etc.)
   [key: string]: unknown;
 }
 
