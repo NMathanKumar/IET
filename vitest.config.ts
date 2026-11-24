@@ -13,9 +13,10 @@ export default defineConfig({
     exclude: ['tests/integration/**'],
     ui: false,
     watch: false,
+    testTimeout: 10000,
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      reporter: ['text', 'json', 'html', 'lcov'],
       exclude: ['node_modules/', 'tests/integration/**'],
     },
   },
