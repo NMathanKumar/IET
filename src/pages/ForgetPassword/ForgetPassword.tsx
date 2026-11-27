@@ -18,7 +18,7 @@ export default function ForgetPassword() {
 
   // Cooldown timers for resend button
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (initialResendCooldown > 0 || resendCooldown > 0) {
       interval = setInterval(() => {
         if (initialResendCooldown > 0) {

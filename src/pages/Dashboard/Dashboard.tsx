@@ -5,6 +5,8 @@ import { hasSeenGuide, markGuideSeen } from '@utils/onboarding';
 import { EnrolmentService } from '@services';
 import type { TestTakerResponse, Enrolment } from '@services/enrolment';
 import AppIcon, { type AppIconName } from '@components/AppIcon';
+import { Button } from '@components/common/Button';
+import PaymentSupportNotice from '@components/PaymentSupportNotice';
 import OnboardingModal from '../Onboarding/Onboarding';
 
 const NEXT_STEPS: { icon: AppIconName; label: string; sub: string; to: string }[] = [
@@ -25,6 +27,7 @@ export default function Dashboard() {
   const [_enrolmentsError, _setEnrolmentsError] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingLoading, setOnboardingLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -77,7 +80,7 @@ export default function Dashboard() {
     };
 
     loadEnrolments();
-  }, [user, isLoading]);
+  }, [user, isLoading, refreshKey]);
 
   // Check if onboarding should be shown when profile is loaded
   useEffect(() => {
@@ -290,7 +293,39 @@ export default function Dashboard() {
                 const today = new Date();
                 const daysLeft = Math.ceil((windowCloseDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
                 const isWindowOpen = today >= windowOpenDate && today <= windowCloseDate;
-                const isPaymentPending = enrolment.payment?.status === 'PENDING';
+                // "by" date: the backend test window when present, otherwise the same
+                // purchase + 21 days date the countdown above uses (never "Invalid Date")
+                const backendCloseDate = enrolment.testWindow?.closesOn
+                  ? new Date(enrolment.testWindow.closesOn)
+                  : null;
+                const displayCloseDate =
+                  backendCloseDate && !Number.isNaN(backendCloseDate.getTime())
+                    ? backendCloseDate
+                    : windowCloseDate;
+                const paymentStatus: string | undefined = enrolment.payment?.status;
+                const enrolmentStatus: string = enrolment.status;
+                // Paid only when positively known: a missing or unrecognised payment is never paid.
+                // CONFIRMED / COMPLETED enrolments are paid (see EnrolmentStatus).
+                const isPaid =
+                  paymentStatus === 'COMPLETED' ||
+                  enrolmentStatus === 'CONFIRMED' ||
+                  enrolmentStatus === 'COMPLETED';
+                const isPaymentUnpaid = !isPaid;
+                // No checkout was ever started (e.g. payment session creation failed)
+                const isPaymentMissing = isPaymentUnpaid && !enrolment.payment;
+                const isPaymentFailed =
+                  isPaymentUnpaid && (paymentStatus === 'FAILED' || paymentStatus === 'EXPIRED');
+                // Missing, FAILED or EXPIRED: pay again for the same enrolment
+                const isPaymentRetryable = isPaymentMissing || isPaymentFailed;
+                // PENDING or an unrecognised status: only re-check, never start another payment
+                const isPaymentPending = isPaymentUnpaid && !isPaymentRetryable;
+                const paymentBadge = isPaymentMissing
+                  ? 'PAYMENT NOT COMPLETED'
+                  : paymentStatus === 'FAILED'
+                    ? 'PAYMENT FAILED'
+                    : paymentStatus === 'EXPIRED'
+                      ? 'PAYMENT EXPIRED'
+                      : 'PAYMENT PENDING';
                 const isCheckInComplete = enrolment.status === 'CONFIRMED';
                 const testStarted = enrolment.status === 'COMPLETED';
                 const hasResult = (enrolment as any).result;
@@ -299,7 +334,7 @@ export default function Dashboard() {
                   <div
                     key={enrolment.id}
                     className={`bg-white rounded-2xl border-2 p-5 md:p-7 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-6 ${
-                      isPaymentPending
+                      isPaymentUnpaid
                         ? 'border-border-alt opacity-75'
                         : isWindowOpen
                           ? 'border-brand-primary/19'
@@ -308,7 +343,7 @@ export default function Dashboard() {
                   >
                     <div className="flex items-start gap-4 flex-1 w-full">
                       <div className={`w-11 h-11 rounded-xl border flex items-center justify-center flex-shrink-0 text-ink ${
-                        isPaymentPending || !isWindowOpen
+                        isPaymentUnpaid || !isWindowOpen
                           ? 'bg-surface-light border-border-alt'
                           : 'bg-surface-brand border-brand-primary/19'
                       }`}>
@@ -320,7 +355,7 @@ export default function Dashboard() {
                             {enrolment.product?.name || 'IDP English Test'}
                           </span>
                           <span className={`text-[10px] font-bold px-2 rounded-full w-fit border ${
-                            isPaymentPending
+                            isPaymentUnpaid
                               ? 'bg-surface-warning-light text-warning border-accent-yellow'
                               : hasResult
                                 ? 'bg-surface-success-light text-success border-success'
@@ -328,8 +363,8 @@ export default function Dashboard() {
                                   ? 'bg-surface-info-light text-info-dark border-info-medium'
                                   : 'bg-surface-warning-light text-warning border-accent-yellow'
                           }`}>
-                            {isPaymentPending
-                              ? 'PAYMENT PENDING'
+                            {isPaymentUnpaid
+                              ? paymentBadge
                               : hasResult
                                 ? 'RESULTS READY'
                                 : testStarted
@@ -341,16 +376,35 @@ export default function Dashboard() {
                           Purchased {new Date(enrolment.enrolmentDateTime).toLocaleDateString()} · ONE TIME TEST · UP TO 80 MINS
                         </p>
                         
-                        {isPaymentPending && (
-                          <span className="inline-flex items-center gap-1.25 text-[11px] font-semibold text-warning bg-surface-warning-light border border-accent-yellow px-2.5 py-0.75 rounded-full">
-                            <AppIcon name="clock" size={14} /> Complete payment to activate your test
-                          </span>
+                        {isPaymentUnpaid && (
+                          <>
+                            <span className="inline-flex items-center gap-1.25 text-[11px] font-semibold text-warning bg-surface-warning-light border border-accent-yellow px-2.5 py-0.75 rounded-full">
+                              <AppIcon name="clock" size={14} />{' '}
+                              {isPaymentMissing
+                                ? 'Payment not completed. Complete payment to activate your test.'
+                                : paymentStatus === 'FAILED'
+                                  ? 'Your payment did not go through. Retry to activate your test.'
+                                  : paymentStatus === 'EXPIRED'
+                                    ? 'Your payment session expired. Retry to activate your test.'
+                                    : 'Payment confirmation in progress. Please do not pay again.'}
+                            </span>
+                            <PaymentSupportNotice
+                              className="mt-3"
+                              variant={
+                                isPaymentMissing || paymentStatus === 'FAILED'
+                                  ? 'failed'
+                                  : paymentStatus === 'EXPIRED'
+                                    ? 'expired'
+                                    : 'pending'
+                              }
+                            />
+                          </>
                         )}
                         
-                        {!isPaymentPending && isWindowOpen && (
+                        {!isPaymentUnpaid && isWindowOpen && (
                           <>
                             <span className="inline-flex items-center gap-1.25 text-[11px] font-semibold text-brand-primary bg-surface-brand border border-brand-primary/25 px-2.5 py-0.75 rounded-full mb-2">
-                              <AppIcon name="award" size={14} /> {daysLeft} days left (by {new Date(enrolment.testWindow?.closesOn || '').toLocaleDateString()})
+                              <AppIcon name="award" size={14} /> {daysLeft} days left (by {displayCloseDate.toLocaleDateString()})
                             </span>
                             <div className={`flex flex-col sm:flex-row sm:items-center gap-1.5 w-fit mt-2 px-2.25 py-1.5 rounded-lg border ${
                               isCheckInComplete
@@ -377,13 +431,23 @@ export default function Dashboard() {
                       </div>
                     </div>
                     
-                    {isPaymentPending ? (
+                    {isPaymentRetryable ? (
                       <Link
-                        to="/book"
+                        to="/checkout"
+                        state={{ retryEnrolment: enrolment }}
                         className="inline-flex items-center justify-center w-full sm:w-auto px-6 py-2.5 rounded-2xl bg-brand-primary text-white text-[13px] font-bold no-underline whitespace-nowrap transition-colors hover:bg-brand-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary disabled:opacity-60 disabled:cursor-not-allowed"
                       >
-                        Make payment →
+                        {isPaymentMissing ? 'Complete payment →' : 'Retry payment →'}
                       </Link>
+                    ) : isPaymentPending ? (
+                      <Button
+                        variant="primary"
+                        size="medium"
+                        className="w-full sm:w-auto whitespace-nowrap"
+                        onClick={() => setRefreshKey((k) => k + 1)}
+                      >
+                        Check payment status
+                      </Button>
                     ) : testStarted ? (
                       <Link
                         to="/results"

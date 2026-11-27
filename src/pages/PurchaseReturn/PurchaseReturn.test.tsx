@@ -193,7 +193,7 @@ describe('PurchaseReturn Page', () => {
       renderComponent();
 
       await waitFor(() => {
-        const errorElement = screen.queryByText(/api request failed/i);
+        const errorElement = screen.queryByText(/could not check your payment status/i);
         expect(errorElement).toBeInTheDocument();
       });
     });
@@ -214,7 +214,7 @@ describe('PurchaseReturn Page', () => {
       renderComponent();
 
       await waitFor(() => {
-        expect(screen.getByText(/payment is still being processed/i)).toBeInTheDocument();
+        expect(screen.getByText(/payment is being confirmed/i)).toBeInTheDocument();
       });
     });
 
@@ -255,7 +255,7 @@ describe('PurchaseReturn Page', () => {
       renderComponent();
 
       await waitFor(() => {
-        expect(screen.getByText(/payment session expired/i)).toBeInTheDocument();
+        expect(screen.getByText(/you can start the payment again/i)).toBeInTheDocument();
       });
     });
 
@@ -268,13 +268,14 @@ describe('PurchaseReturn Page', () => {
       });
     });
 
-    it('displays "Try again" button in error state', async () => {
+    it('does not offer "Try again" (new purchase) in the fallback error state', async () => {
       const { render: renderComponent } = renderPage(null);
       renderComponent();
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /dashboard/i })).toBeInTheDocument();
       });
+      expect(screen.queryByRole('button', { name: /try again/i })).not.toBeInTheDocument();
     });
 
     it('navigates to dashboard on "Dashboard" click', async () => {
@@ -288,16 +289,6 @@ describe('PurchaseReturn Page', () => {
       });
     });
 
-    it('navigates to book page on "Try again" click', async () => {
-      const { render: renderComponent, navigate } = renderPage(null);
-      renderComponent();
-
-      await waitFor(() => {
-        const button = screen.getByRole('button', { name: /try again/i });
-        button.click();
-        expect(navigate).toHaveBeenCalledWith('/book', { replace: true });
-      });
-    });
   });
 
   describe('Payment Verification', () => {

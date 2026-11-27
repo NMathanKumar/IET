@@ -3,6 +3,20 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@components/common/Button';
 import { EnrolmentService } from '@services';
 import type { Enrolment } from '@services/enrolment';
+import PaymentSupportNotice from '@components/PaymentSupportNotice';
+
+const PENDING_MESSAGE =
+  'Your payment is being confirmed. Please do not pay again. This can take a few minutes.';
+
+const ERROR_TITLES: Record<string, string> = {
+  pending: 'Payment pending',
+  failed: 'Payment failed',
+  expired: 'Payment session expired',
+  'check-failed': 'Unable to check payment',
+  other: 'Payment problem',
+};
+
+type FailureKind = 'pending' | 'failed' | 'expired' | 'check-failed' | 'other';
 
 export default function PurchaseReturn() {
   const navigate = useNavigate();
@@ -11,6 +25,9 @@ export default function PurchaseReturn() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
   const [enrolment, setEnrolment] = useState<Enrolment | null>(null);
+  const [matchedForRetry, setMatchedForRetry] = useState<Enrolment | null>(null);
+  const [failure, setFailure] = useState<FailureKind>('other');
+  const [attempt, setAttempt] = useState<number>(0);
 
   useEffect(() => {
     const verifyPayment = async () => {
@@ -18,7 +35,7 @@ export default function PurchaseReturn() {
         const checkoutSessionId = searchParams.get('session_id');
 
         if (!checkoutSessionId) {
-          setError('Payment session ID not found. Please contact support.');
+          setError('Payment session ID not found. Please check your dashboard for your payment status.');
           setLoading(false);
           return;
         }
@@ -29,34 +46,44 @@ export default function PurchaseReturn() {
         );
 
         if (!matchedEnrolment) {
-          setError('Could not find your payment. Please contact support.');
+          setError('Could not find your payment. Please check your dashboard for your payment status.');
           setLoading(false);
           return;
         }
 
-        if (matchedEnrolment.payment?.status === 'COMPLETED') {
+        const paymentStatus: string | undefined = matchedEnrolment.payment?.status;
+        setMatchedForRetry(matchedEnrolment);
+
+        if (paymentStatus === 'COMPLETED') {
           setEnrolment(matchedEnrolment);
           setSuccess(true);
-        } else if (matchedEnrolment.payment?.status === 'PENDING') {
-          setError('Payment is still being processed. Please refresh the page.');
-        } else if (matchedEnrolment.payment?.status === 'FAILED') {
-          setError('Payment failed. Please try again.');
-        } else if (matchedEnrolment.payment?.status === 'EXPIRED') {
-          setError('Payment session expired. Please start a new purchase.');
+        } else if (paymentStatus === 'PENDING') {
+          setFailure('pending');
+          setError(PENDING_MESSAGE);
+        } else if (paymentStatus === 'FAILED') {
+          setFailure('failed');
+          setError('Your payment did not go through. You have not been charged for this attempt.');
+        } else if (paymentStatus === 'EXPIRED') {
+          setFailure('expired');
+          setError('Your payment session expired. You can start the payment again for the same test.');
         } else {
-          setError('Payment verification failed. Please contact support.');
+          setError('We could not confirm your payment status. Please check your dashboard for your payment status.');
         }
 
         setLoading(false);
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Failed to verify payment';
-        setError(errorMessage);
+      } catch {
+        // Never surface raw error text from the API
+        setFailure('check-failed');
+        setError('We could not check your payment status. Please try again.');
         setLoading(false);
       }
     };
 
+    setLoading(true);
+    setError(null);
+    setFailure('other');
     verifyPayment();
-  }, [searchParams]);
+  }, [searchParams, attempt]);
 
   // Loading state
   if (loading) {
@@ -82,25 +109,43 @@ export default function PurchaseReturn() {
               </svg>
             </div>
             
-            <h1 className="text-[20px] font-black text-brand-red mb-2">Payment failed</h1>
+            <h1 className="text-[20px] font-black text-brand-red mb-2">{ERROR_TITLES[failure]}</h1>
             <p className="text-[13px] text-slate mb-6">{error}</p>
 
-            <div className="w-full flex flex-col gap-2.5">
+            <div className="w-full flex flex-col gap-2.5 mb-6">
+              {(failure === 'failed' || failure === 'expired') && matchedForRetry && (
+                <Button
+                  variant="primary"
+                  size="medium"
+                  fullWidth
+                  onClick={() => navigate('/checkout', { replace: true, state: { retryEnrolment: matchedForRetry } })}
+                >
+                  Try payment again
+                </Button>
+              )}
+              {(failure === 'pending' || failure === 'check-failed') && (
+                <Button
+                  variant="primary"
+                  size="medium"
+                  fullWidth
+                  onClick={() => setAttempt((n) => n + 1)}
+                >
+                  Check payment status
+                </Button>
+              )}
               <Button
-                variant="primary"
+                variant={failure === 'other' ? 'primary' : 'secondary'}
                 size="medium"
                 fullWidth
                 onClick={() => navigate('/dashboard', { replace: true })}
               >
                 Dashboard
               </Button>
-              <button
-                onClick={() => navigate('/book', { replace: true })}
-                className="w-full px-6 py-2.5 rounded-lg border-2 border-brand-primary text-brand-primary text-[12px] font-black hover:bg-brand-primary hover:text-white transition duration-200"
-              >
-                Try again
-              </button>
+              {/* No "start a new purchase" action here: the enrolment may already exist or be paid,
+                  and /book would create a duplicate enrolment. Dashboard shows the real status. */}
             </div>
+
+            <PaymentSupportNotice variant={failure === 'pending' ? 'pending' : failure === 'expired' ? 'expired' : failure === 'failed' ? 'failed' : 'general'} />
           </div>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import Checkout from './Checkout';
@@ -8,6 +9,7 @@ const mocks = vi.hoisted(() => {
   const mockNavigate = vi.fn();
   const mockCreateEnrolment = vi.fn();
   const mockCreatePaymentSession = vi.fn();
+  const mockGetEnrolments = vi.fn();
   const mockLocation = { 
     state: { 
       product: { 
@@ -24,6 +26,7 @@ const mocks = vi.hoisted(() => {
     mockNavigate,
     mockCreateEnrolment,
     mockCreatePaymentSession,
+    mockGetEnrolments,
     mockLocation,
   };
 });
@@ -84,6 +87,7 @@ vi.mock('@services', () => ({
   EnrolmentService: {
     createEnrolment: mocks.mockCreateEnrolment,
     createPaymentSession: mocks.mockCreatePaymentSession,
+    getEnrolments: mocks.mockGetEnrolments,
   },
 }));
 
@@ -131,6 +135,10 @@ describe('Checkout Page', () => {
     mocks.mockNavigate.mockClear();
     mocks.mockCreateEnrolment.mockClear();
     mocks.mockCreatePaymentSession.mockClear();
+    mocks.mockGetEnrolments.mockClear();
+
+    // No existing enrolments by default, so a new purchase creates one
+    mocks.mockGetEnrolments.mockResolvedValue([]);
 
     // Default successful mock responses
     mocks.mockCreateEnrolment.mockResolvedValue({
@@ -406,9 +414,19 @@ describe('Checkout Page', () => {
       // Component should show error state with specific error message
       await waitFor(() => {
         expect(screen.getByText(/failed to load checkout/i)).toBeInTheDocument();
-        expect(screen.getByText(/failed to load stripe/i)).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /back to test selection/i })).toBeInTheDocument();
+        // A non-HTTP error maps to the generic safe message; the raw error text is never shown
+        expect(
+          screen.getByText(/something went wrong while setting up your payment/i)
+        ).toBeInTheDocument();
+        // The enrolment already exists, so the user retries payment or goes to the dashboard
+        // (not back to test selection, which would create another enrolment)
+        expect(screen.getByRole('button', { name: /try payment again/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /go to dashboard/i })).toBeInTheDocument();
       });
+      expect(screen.queryByText(/failed to load stripe/i)).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /back to test selection/i })
+      ).not.toBeInTheDocument();
     });
 
     it('does not expose clientSecret in logs', async () => {
@@ -425,6 +443,324 @@ describe('Checkout Page', () => {
       expect(logs).not.toMatch(/pi_secret/);
       
       consoleSpy.mockRestore();
+    });
+  });
+
+  // MSP-2849: a refresh, Back or remount must never create a second enrolment
+  describe('Duplicate enrolment protection', () => {
+    const product = {
+      id: 'product-123',
+      name: 'IDP English Test',
+      description: 'HST',
+      status: 'ACTIVE',
+      fees: [{ country: 'AUS', currency: 'AUD', basePrice: 89 }],
+    };
+
+    const snapshotFee = { country: 'AUS', currency: 'AUD', basePrice: 95 };
+
+    const enrolment = (overrides: Record<string, unknown> = {}) => ({
+      id: 'enrol-existing',
+      status: 'IN_PROGRESS',
+      enrolmentDateTime: '2025-01-15T10:00:00Z',
+      product: { id: 'product-123', name: 'IDP English Test', fee: snapshotFee },
+      ...overrides,
+    });
+
+    const payment = (status: string) => ({
+      provider: 'STRIPE',
+      status,
+      amount: 95,
+      currency: 'AUD',
+    });
+
+    const apiError = (status: number, message: string) =>
+      Object.assign(new Error(message), { status });
+
+    function renderWithState(state: Record<string, unknown>) {
+      Object.defineProperty(mocks.mockLocation, 'state', { value: state, writable: true });
+      return render(
+        <MemoryRouter initialEntries={['/checkout']}>
+          <Checkout />
+        </MemoryRouter>
+      );
+    }
+
+    const waitForStripe = () =>
+      waitFor(() => expect(screen.getByTestId('stripe-embedded-checkout')).toBeInTheDocument());
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+      mocks.mockGetEnrolments.mockResolvedValue([]);
+      mocks.mockCreateEnrolment.mockResolvedValue({ id: 'enrol-123', status: 'IN_PROGRESS' });
+      mocks.mockCreatePaymentSession.mockResolvedValue({
+        enrolmentId: 'enrol-123',
+        checkoutSessionId: 'cs_test_123',
+        clientSecret: 'pi_secret_test',
+        publishableKey: 'pk_test_123',
+        status: 'PENDING',
+      });
+    });
+
+    it('first-time checkout: looks up, creates one enrolment and records its id before paying', async () => {
+      renderWithState({ product });
+
+      await waitForStripe();
+
+      expect(mocks.mockGetEnrolments).toHaveBeenCalledTimes(1);
+      expect(mocks.mockCreateEnrolment).toHaveBeenCalledTimes(1);
+      expect(mocks.mockCreateEnrolment).toHaveBeenCalledWith({ productId: 'product-123' });
+      expect(mocks.mockNavigate).toHaveBeenCalledWith('/checkout', {
+        replace: true,
+        state: { product, enrolmentId: 'enrol-123' },
+      });
+      expect(mocks.mockCreatePaymentSession).toHaveBeenCalledWith('enrol-123');
+      expect(mocks.mockNavigate.mock.invocationCallOrder[0]).toBeLessThan(
+        mocks.mockCreatePaymentSession.mock.invocationCallOrder[0]
+      );
+    });
+
+    it('refresh with a known unpaid enrolment id: checks status, reuses it, creates nothing', async () => {
+      mocks.mockGetEnrolments.mockResolvedValue([enrolment({ id: 'enrol-123' })]);
+
+      renderWithState({ product, enrolmentId: 'enrol-123' });
+
+      await waitForStripe();
+
+      expect(mocks.mockGetEnrolments).toHaveBeenCalledTimes(1);
+      expect(mocks.mockCreateEnrolment).not.toHaveBeenCalled();
+      expect(mocks.mockNavigate).not.toHaveBeenCalled();
+      expect(mocks.mockCreatePaymentSession).toHaveBeenCalledTimes(1);
+      expect(mocks.mockCreatePaymentSession).toHaveBeenCalledWith('enrol-123');
+      // Price comes from the enrolment snapshot
+      expect(screen.getByText('$95 AUD')).toBeInTheDocument();
+    });
+
+    it('remount with a known enrolment id (refs reset) still creates no enrolment', async () => {
+      mocks.mockGetEnrolments.mockResolvedValue([enrolment({ id: 'enrol-123' })]);
+
+      const first = renderWithState({ product, enrolmentId: 'enrol-123' });
+      await waitForStripe();
+      first.unmount();
+
+      renderWithState({ product, enrolmentId: 'enrol-123' });
+      await waitFor(() => expect(mocks.mockCreatePaymentSession).toHaveBeenCalledTimes(2));
+
+      expect(mocks.mockCreateEnrolment).not.toHaveBeenCalled();
+      expect(mocks.mockCreatePaymentSession).toHaveBeenNthCalledWith(1, 'enrol-123');
+      expect(mocks.mockCreatePaymentSession).toHaveBeenNthCalledWith(2, 'enrol-123');
+    });
+
+    it.each([
+      ['FAILED', payment('FAILED')],
+      ['EXPIRED', payment('EXPIRED')],
+    ])(
+      'known enrolment id with %s payment: retries payment for the same enrolment',
+      async (_label, existingPayment) => {
+        mocks.mockGetEnrolments.mockResolvedValue([
+          enrolment({ id: 'enrol-123', payment: existingPayment }),
+        ]);
+
+        renderWithState({ product, enrolmentId: 'enrol-123' });
+
+        await waitForStripe();
+
+        expect(mocks.mockCreateEnrolment).not.toHaveBeenCalled();
+        expect(mocks.mockCreatePaymentSession).toHaveBeenCalledTimes(1);
+        expect(mocks.mockCreatePaymentSession).toHaveBeenCalledWith('enrol-123');
+      }
+    );
+
+    it('known enrolment id with PENDING payment: no new session, safe pending message', async () => {
+      mocks.mockGetEnrolments.mockResolvedValue([
+        enrolment({ id: 'enrol-123', payment: payment('PENDING') }),
+      ]);
+
+      renderWithState({ product, enrolmentId: 'enrol-123' });
+
+      expect(
+        await screen.findByRole('heading', { name: /payment pending/i })
+      ).toBeInTheDocument();
+      expect(screen.getAllByText(/do not pay again/i).length).toBeGreaterThan(0);
+      expect(mocks.mockCreatePaymentSession).not.toHaveBeenCalled();
+      expect(mocks.mockCreateEnrolment).not.toHaveBeenCalled();
+      expect(screen.queryByRole('button', { name: /try payment again/i })).not.toBeInTheDocument();
+      expect(screen.queryByTestId('stripe-embedded-checkout')).not.toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole('button', { name: /go to dashboard/i }));
+      expect(mocks.mockNavigate).toHaveBeenCalledWith('/dashboard', { replace: true });
+    });
+
+    it('PENDING: "Check payment status" re-checks and only pays once the payment has failed', async () => {
+      mocks.mockGetEnrolments
+        .mockResolvedValueOnce([enrolment({ id: 'enrol-123', payment: payment('PENDING') })])
+        .mockResolvedValueOnce([enrolment({ id: 'enrol-123', payment: payment('FAILED') })]);
+
+      renderWithState({ product, enrolmentId: 'enrol-123' });
+
+      await userEvent.click(await screen.findByRole('button', { name: /check payment status/i }));
+
+      await waitForStripe();
+
+      expect(mocks.mockGetEnrolments).toHaveBeenCalledTimes(2);
+      expect(mocks.mockCreatePaymentSession).toHaveBeenCalledTimes(1);
+      expect(mocks.mockCreatePaymentSession).toHaveBeenCalledWith('enrol-123');
+      expect(mocks.mockCreateEnrolment).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['COMPLETED payment', enrolment({ id: 'enrol-123', payment: payment('COMPLETED') })],
+      ['CONFIRMED enrolment', enrolment({ id: 'enrol-123', status: 'CONFIRMED' })],
+    ])('known enrolment id with %s: no new session, already-paid message', async (_l, current) => {
+      mocks.mockGetEnrolments.mockResolvedValue([current]);
+
+      renderWithState({ product, enrolmentId: 'enrol-123' });
+
+      expect(
+        await screen.findByRole('heading', { name: /payment already completed/i })
+      ).toBeInTheDocument();
+      expect(screen.getByText(/already been paid for/i)).toBeInTheDocument();
+      expect(mocks.mockCreatePaymentSession).not.toHaveBeenCalled();
+      expect(mocks.mockCreateEnrolment).not.toHaveBeenCalled();
+      expect(screen.queryByRole('button', { name: /try payment again/i })).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /go to dashboard/i })).toBeInTheDocument();
+    });
+
+    it.each([
+      ['not in the list', []],
+      ['an unknown payment status', [enrolment({ id: 'enrol-123', payment: payment('SOMETHING') })]],
+    ])('known enrolment id %s: no new session, points to the dashboard', async (_l, list) => {
+      mocks.mockGetEnrolments.mockResolvedValue(list);
+
+      renderWithState({ product, enrolmentId: 'enrol-123' });
+
+      expect(await screen.findByText(/could not confirm the status/i)).toBeInTheDocument();
+      expect(mocks.mockCreatePaymentSession).not.toHaveBeenCalled();
+      expect(mocks.mockCreateEnrolment).not.toHaveBeenCalled();
+      expect(screen.queryByRole('button', { name: /try payment again/i })).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /go to dashboard/i })).toBeInTheDocument();
+    });
+
+    it('known enrolment id when the status check fails: fails closed, retry re-checks', async () => {
+      mocks.mockGetEnrolments
+        .mockRejectedValueOnce(apiError(500, 'DynamoDB timeout arn:aws:xyz'))
+        .mockResolvedValueOnce([enrolment({ id: 'enrol-123' })]);
+
+      renderWithState({ product, enrolmentId: 'enrol-123' });
+
+      expect(await screen.findByText(/could not start your payment right now/i)).toBeInTheDocument();
+      expect(screen.queryByText(/dynamodb|arn:aws/i)).not.toBeInTheDocument();
+      expect(mocks.mockCreatePaymentSession).not.toHaveBeenCalled();
+      // Retrying payment directly would skip the status check
+      expect(screen.queryByRole('button', { name: /try payment again/i })).not.toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole('button', { name: /^try again$/i }));
+
+      await waitForStripe();
+      expect(mocks.mockGetEnrolments).toHaveBeenCalledTimes(2);
+      expect(mocks.mockCreatePaymentSession).toHaveBeenCalledTimes(1);
+      expect(mocks.mockCreatePaymentSession).toHaveBeenCalledWith('enrol-123');
+      expect(mocks.mockCreateEnrolment).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['no payment', undefined],
+      ['FAILED', payment('FAILED')],
+      ['EXPIRED', payment('EXPIRED')],
+    ])(
+      'reuses a matching unpaid enrolment (%s) with its own fee snapshot',
+      async (_label, existingPayment) => {
+        mocks.mockGetEnrolments.mockResolvedValue([enrolment({ payment: existingPayment })]);
+
+        renderWithState({ product });
+
+        await waitForStripe();
+
+        expect(mocks.mockCreateEnrolment).not.toHaveBeenCalled();
+        expect(mocks.mockCreatePaymentSession).toHaveBeenCalledWith('enrol-existing');
+        expect(mocks.mockNavigate).toHaveBeenCalledWith('/checkout', {
+          replace: true,
+          state: {
+            product: { id: 'product-123', name: 'IDP English Test', fees: [snapshotFee] },
+            enrolmentId: 'enrol-existing',
+          },
+        });
+        // Price comes from the enrolment snapshot (95), not the product list (89)
+        expect(screen.getByText('$95 AUD')).toBeInTheDocument();
+      }
+    );
+
+    it('reuses the newest matching enrolment', async () => {
+      mocks.mockGetEnrolments.mockResolvedValue([
+        enrolment({ id: 'enrol-older', enrolmentDateTime: '2025-01-01T10:00:00Z' }),
+        enrolment({ id: 'enrol-newest', enrolmentDateTime: '2025-02-01T10:00:00Z' }),
+      ]);
+
+      renderWithState({ product });
+
+      await waitForStripe();
+
+      expect(mocks.mockCreatePaymentSession).toHaveBeenCalledWith('enrol-newest');
+      expect(mocks.mockCreateEnrolment).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['PENDING payment', enrolment({ payment: payment('PENDING') })],
+      ['COMPLETED payment', enrolment({ payment: payment('COMPLETED') })],
+      [
+        'a different product',
+        enrolment({ product: { id: 'other-product', name: 'Other', fee: snapshotFee } }),
+      ],
+      ['a non IN_PROGRESS enrolment', enrolment({ status: 'CONFIRMED' })],
+    ])('does not reuse an enrolment with %s and creates a new one', async (_label, existing) => {
+      mocks.mockGetEnrolments.mockResolvedValue([existing]);
+
+      renderWithState({ product });
+
+      await waitForStripe();
+
+      expect(mocks.mockCreateEnrolment).toHaveBeenCalledTimes(1);
+      expect(mocks.mockCreatePaymentSession).toHaveBeenCalledWith('enrol-123');
+      expect(mocks.mockCreatePaymentSession).not.toHaveBeenCalledWith('enrol-existing');
+    });
+
+    it('fails closed when the lookup fails: safe error, no enrolment created', async () => {
+      mocks.mockGetEnrolments.mockRejectedValue(apiError(500, 'DynamoDB timeout arn:aws:xyz'));
+
+      renderWithState({ product });
+
+      expect(await screen.findByText(/could not start your payment right now/i)).toBeInTheDocument();
+      expect(screen.queryByText(/dynamodb|arn:aws/i)).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /^try again$/i })).toBeInTheDocument();
+      expect(mocks.mockCreateEnrolment).not.toHaveBeenCalled();
+      expect(mocks.mockCreatePaymentSession).not.toHaveBeenCalled();
+    });
+
+    it('lets the user retry the lookup, then continues normally', async () => {
+      mocks.mockGetEnrolments.mockRejectedValueOnce(apiError(500, 'boom'));
+
+      renderWithState({ product });
+
+      await userEvent.click(await screen.findByRole('button', { name: /^try again$/i }));
+
+      await waitForStripe();
+
+      expect(mocks.mockGetEnrolments).toHaveBeenCalledTimes(2);
+      expect(mocks.mockCreateEnrolment).toHaveBeenCalledTimes(1);
+      expect(mocks.mockCreatePaymentSession).toHaveBeenCalledWith('enrol-123');
+    });
+
+    it('keeps the retryEnrolment flow unchanged: no lookup, no creation, same enrolment', async () => {
+      renderWithState({
+        retryEnrolment: enrolment({ id: 'enrol-retry', payment: payment('FAILED') }),
+      });
+
+      await waitForStripe();
+
+      expect(mocks.mockGetEnrolments).not.toHaveBeenCalled();
+      expect(mocks.mockCreateEnrolment).not.toHaveBeenCalled();
+      expect(mocks.mockNavigate).not.toHaveBeenCalled();
+      expect(mocks.mockCreatePaymentSession).toHaveBeenCalledTimes(1);
+      expect(mocks.mockCreatePaymentSession).toHaveBeenCalledWith('enrol-retry');
     });
   });
 });

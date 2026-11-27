@@ -1,5 +1,6 @@
 
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import Dashboard from './Dashboard';
@@ -203,13 +204,14 @@ describe('Dashboard', () => {
       isLoading: false,
     };
 
-    // Mock enrolment with pending check-in (status not CONFIRMED)
+    // Paid enrolment (payment COMPLETED) that is still IN_PROGRESS: check-in is not complete
     mocks.mockGetEnrolments.mockResolvedValue([
       {
         id: 'test123',
         testId: 'test123',
         product: { name: 'IDP English Test' },
-        status: 'ENROLLED', // Not CONFIRMED means check-in is incomplete
+        status: 'IN_PROGRESS',
+        payment: { provider: 'STRIPE', status: 'COMPLETED', amount: 89, currency: 'AUD' },
         enrolmentDateTime: new Date().toISOString(),
         testWindow: {
           closesOn: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
@@ -360,5 +362,215 @@ describe('Dashboard', () => {
         name: /welcome back/i,
       })
     ).toBeInTheDocument();
+  });
+
+  // H2: an unpaid enrolment must never look like an active test
+  describe('Payment status of enrolment cards', () => {
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    const daysAgo = (n: number) => new Date(Date.now() - n * DAY_MS).toISOString();
+
+    const card = (overrides: Record<string, unknown> = {}) => ({
+      id: 'enrol-1',
+      product: {
+        id: 'p1',
+        name: 'IDP English Test',
+        fee: { country: 'AUS', currency: 'AUD', basePrice: 89 },
+      },
+      status: 'IN_PROGRESS',
+      enrolmentDateTime: daysAgo(2),
+      ...overrides,
+    });
+
+    const pay = (status: string) => ({ provider: 'STRIPE', status, amount: 89, currency: 'AUD' });
+
+    const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    // Same rule as the Dashboard countdown: purchase date + 21 days
+    const expectedCloseDate = (enrolmentDateTime: string) => {
+      const close = new Date(enrolmentDateTime);
+      close.setDate(close.getDate() + 21);
+      return close.toLocaleDateString();
+    };
+
+    // Renders Dashboard with a /checkout route that shows which enrolment it received
+    async function renderWithCheckoutProbe() {
+      const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+      function CheckoutProbe() {
+        const location = actual.useLocation();
+        const state = location.state as { retryEnrolment?: { id: string } } | null;
+        return <div data-testid="checkout-probe">{state?.retryEnrolment?.id}</div>;
+      }
+      return render(
+        <MemoryRouter initialEntries={['/dashboard']}>
+          <actual.Routes>
+            <actual.Route path="/dashboard" element={<Dashboard />} />
+            <actual.Route path="/checkout" element={<CheckoutProbe />} />
+          </actual.Routes>
+        </MemoryRouter>
+      );
+    }
+
+    const expectNoActiveTest = () => {
+      expect(screen.queryByText(/days left/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/invalid date/i)).not.toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: /check-in/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: /start test/i })).not.toBeInTheDocument();
+      expect(screen.queryByText(/check-in is required|check-in completed/i)).not.toBeInTheDocument();
+      expect(screen.queryByText('TEST NOT STARTED')).not.toBeInTheDocument();
+    };
+
+    const expectNoPaymentActions = () => {
+      expect(
+        screen.queryByRole('link', { name: /complete payment|retry payment/i })
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /check payment status/i })
+      ).not.toBeInTheDocument();
+      expect(screen.queryByText(/^PAYMENT /)).not.toBeInTheDocument();
+    };
+
+    beforeEach(() => {
+      mocks.mockAuthState = {
+        user: { username: 'test@example.com' },
+        isLoading: false,
+      };
+    });
+
+    it('missing payment: "Payment not completed", Complete payment reuses the enrolment, no active test', async () => {
+      mocks.mockGetEnrolments.mockResolvedValue([card()]);
+
+      await renderWithCheckoutProbe();
+
+      expect(await screen.findByText('PAYMENT NOT COMPLETED')).toBeInTheDocument();
+      expect(screen.getByText(/complete payment to activate your test/i)).toBeInTheDocument();
+      expectNoActiveTest();
+      expect(screen.queryByRole('link', { name: /retry payment/i })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /check payment status/i })
+      ).not.toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole('link', { name: /complete payment/i }));
+      expect(await screen.findByTestId('checkout-probe')).toHaveTextContent('enrol-1');
+    });
+
+    it('unknown payment status: status guidance and only Check payment status', async () => {
+      mocks.mockGetEnrolments.mockResolvedValue([card({ payment: pay('SOMETHING_NEW') })]);
+
+      await renderWithCheckoutProbe();
+
+      expect(await screen.findByText('PAYMENT PENDING')).toBeInTheDocument();
+      expect(screen.getAllByText(/do not pay again/i).length).toBeGreaterThan(0);
+      expect(screen.getByRole('button', { name: /check payment status/i })).toBeInTheDocument();
+      expect(
+        screen.queryByRole('link', { name: /complete payment|retry payment/i })
+      ).not.toBeInTheDocument();
+      expectNoActiveTest();
+    });
+
+    it('PENDING: only Check payment status, which re-fetches without starting a payment', async () => {
+      mocks.mockGetEnrolments.mockResolvedValue([card({ payment: pay('PENDING') })]);
+
+      await renderWithCheckoutProbe();
+
+      expect(await screen.findByText('PAYMENT PENDING')).toBeInTheDocument();
+      expect(screen.getAllByText(/do not pay again/i).length).toBeGreaterThan(0);
+      expect(
+        screen.queryByRole('link', { name: /complete payment|retry payment/i })
+      ).not.toBeInTheDocument();
+      expectNoActiveTest();
+
+      await userEvent.click(screen.getByRole('button', { name: /check payment status/i }));
+      await waitFor(() => expect(mocks.mockGetEnrolments).toHaveBeenCalledTimes(2));
+      expect(screen.queryByTestId('checkout-probe')).not.toBeInTheDocument();
+    });
+
+    it.each([
+      ['FAILED', 'PAYMENT FAILED', /did not go through\. retry/i],
+      ['EXPIRED', 'PAYMENT EXPIRED', /session expired\. retry/i],
+    ])(
+      '%s: keeps Retry payment for the same enrolment, no active test',
+      async (status, badge, message) => {
+        mocks.mockGetEnrolments.mockResolvedValue([card({ payment: pay(status) })]);
+
+        await renderWithCheckoutProbe();
+
+        expect(await screen.findByText(badge)).toBeInTheDocument();
+        expect(screen.getByText(message)).toBeInTheDocument();
+        expect(screen.queryByRole('link', { name: /complete payment/i })).not.toBeInTheDocument();
+        expectNoActiveTest();
+
+        await userEvent.click(screen.getByRole('link', { name: /retry payment/i }));
+        expect(await screen.findByTestId('checkout-probe')).toHaveTextContent('enrol-1');
+      }
+    );
+
+    it('COMPLETED payment (IN_PROGRESS): active test with countdown, valid date and Check-in', async () => {
+      const enrolment = card({ payment: pay('COMPLETED') });
+      mocks.mockGetEnrolments.mockResolvedValue([enrolment]);
+
+      renderPage();
+
+      expect(await screen.findByRole('link', { name: /check-in/i })).toBeInTheDocument();
+      expect(screen.getByText('TEST NOT STARTED')).toBeInTheDocument();
+      // No testWindow yet: the "by" date follows the countdown rule (purchase + 21 days)
+      const closeDate = expectedCloseDate(enrolment.enrolmentDateTime as string);
+      expect(
+        screen.getByText(new RegExp(`\\d+ days left \\(by ${escapeRegExp(closeDate)}\\)`))
+      ).toBeInTheDocument();
+      expect(screen.queryByText(/invalid date/i)).not.toBeInTheDocument();
+      expectNoPaymentActions();
+    });
+
+    it('COMPLETED payment with a backend testWindow: keeps showing its closing date', async () => {
+      const closesOn = new Date(Date.now() + 10 * DAY_MS).toISOString();
+      mocks.mockGetEnrolments.mockResolvedValue([
+        card({ payment: pay('COMPLETED'), testWindow: { opensOn: daysAgo(1), closesOn } }),
+      ]);
+
+      renderPage();
+
+      const backendDate = new Date(closesOn).toLocaleDateString();
+      expect(
+        await screen.findByText(new RegExp(`\\(by ${escapeRegExp(backendDate)}\\)`))
+      ).toBeInTheDocument();
+      expectNoPaymentActions();
+    });
+
+    it('CONFIRMED enrolment without a payment object is paid: Start test, no payment actions', async () => {
+      mocks.mockGetEnrolments.mockResolvedValue([card({ status: 'CONFIRMED' })]);
+
+      renderPage();
+
+      expect(await screen.findByRole('link', { name: /start test/i })).toBeInTheDocument();
+      expectNoPaymentActions();
+    });
+
+    it('COMPLETED enrolment without a payment object is paid: View results, no payment actions', async () => {
+      mocks.mockGetEnrolments.mockResolvedValue([card({ status: 'COMPLETED' })]);
+
+      renderPage();
+
+      expect(await screen.findByRole('link', { name: /view results/i })).toBeInTheDocument();
+      expect(screen.getByText('TEST COMPLETED')).toBeInTheDocument();
+      expectNoPaymentActions();
+    });
+
+    it('mixed list: paid and unpaid cards each show their own state', async () => {
+      mocks.mockGetEnrolments.mockResolvedValue([
+        card({ id: 'enrol-paid', payment: pay('COMPLETED') }),
+        card({ id: 'enrol-unpaid' }),
+      ]);
+
+      await renderWithCheckoutProbe();
+
+      expect(await screen.findByText('PAYMENT NOT COMPLETED')).toBeInTheDocument();
+      expect(screen.getByText('TEST NOT STARTED')).toBeInTheDocument();
+      expect(screen.getAllByRole('link', { name: /check-in/i })).toHaveLength(1);
+      expect(screen.getAllByText(/days left/i)).toHaveLength(1);
+      expect(screen.getAllByRole('link', { name: /complete payment/i })).toHaveLength(1);
+
+      await userEvent.click(screen.getByRole('link', { name: /complete payment/i }));
+      expect(await screen.findByTestId('checkout-probe')).toHaveTextContent('enrol-unpaid');
+    });
   });
 });

@@ -139,8 +139,8 @@ export function shouldRunDataModifyingTests(): boolean {
  */
 export function getTestCredentials(): { email: string; password: string } {
   // Try to get from process.env first (may not be set yet if config didn't propagate)
-  let email = process.env.COGNITO_TEST_EMAIL;
-  let password = process.env.COGNITO_TEST_PASSWORD;
+  const email = process.env.COGNITO_TEST_EMAIL;
+  const password = process.env.COGNITO_TEST_PASSWORD;
 
   // If not set, check if vitest env config loaded them but didn't export to process.env
   // In that case, we need to read from the env object that was passed to the setup
